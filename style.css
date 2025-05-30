@@ -61,6 +61,12 @@ h2 {
   font-size: 1.5rem;
 }
 
+.caption {
+  font-family: "Nunito", serif;
+  font-size: 0.8em;
+  font-style: italic;
+}
+
 .centered {
   align-items: center;
 }
@@ -86,11 +92,12 @@ h2 {
   height: 100%;
 }
 
-#map {
-  width: 500px;
-  height: 500px;
+.iframe-container {
   display: flex;
-  justify-content: center; /* centers horizontally */
-  align-items: center; /* centers vertically */
-  margin: 0 auto; /* centers #map itself in its parent */
+  flex-direction: column; /* Stack children vertically */
+  justify-content: center; /* Center vertically (now along column) */
+  align-items: center; /* Center horizontally */
+  width: 100%;
+  margin: 0 auto;
+  height: auto; /* Let height be determined by content */
 }
