@@ -5,7 +5,8 @@
     <title>ELENA &amp; CHRIS • Wedding Website</title>
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body onload="updateCountdown()">
+  <body>
+    <script src="index.js"></script>
     <div id="header">
       <div class="container">
         <section id="home">
@@ -98,28 +99,5 @@
         </div>
       </div>
     </div>
-    <script>
-      // Set your wedding date here (YYYY-MM-DD)
-      const weddingDate = new Date("2026-08-15T00:00:00");
-      const countdownEl = document.getElementById("countdown");
-
-      function updateCountdown() {
-        console.log("Updating countdown...");
-        const now = new Date();
-        // Calculate difference in milliseconds
-        const diff = weddingDate - now;
-        // Convert to days
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        if (days > 1) {
-          countdownEl.textContent = `${days} days to go!`;
-        } else if (days === 1) {
-          countdownEl.textContent = "1 day to go!";
-        } else if (days === 0) {
-          countdownEl.textContent = "Today is the day!";
-        } else {
-          countdownEl.textContent = "The wedding has passed!";
-        }
-      }
-    </script>
   </body>
 </html>
