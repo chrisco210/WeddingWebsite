@@ -52,8 +52,20 @@ h2 {
 }
 
 .container {
-  padding: 0 30vw 0 30vw;
+  /* padding: 0 30vw 0 30vw; */
   margin: 0 0 0 0;
+}
+
+@media (min-width: 1201px) {
+  .container {
+    padding: 0 30vw 0 30vw;
+  }
+}
+
+@media (max-width: 1200px) {
+  .container {
+    padding: 0 10vw 0 10vw;
+  }
 }
 
 .subtitle {
