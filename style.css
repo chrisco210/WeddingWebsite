@@ -26,7 +26,8 @@ body {
   background-color: #f0f0f0;
 }
 
-p {
+p,
+li {
   font-family: "Cormorant Infant", serif;
   font-size: 1.2rem;
   line-height: 1.6;
@@ -105,6 +106,16 @@ h2 {
   justify-content: center; /* Vertically center content */
 }
 
+#footer {
+  background-color: #697357;
+  color: #ffffff;
+  width: 100%;
+  height: auto; /* Adjusted for footer content */
+  padding: 2rem 0; /* Add padding for footer */
+  text-align: center;
+  margin: 0;
+}
+
 #content {
   background-color: #f0f0f0;
   color: #333;
@@ -115,7 +126,11 @@ h2 {
   height: 100%;
 }
 
-.iframe-container {
+#lawrence-chapel {
+  max-width: 400px;
+}
+
+.resource-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
