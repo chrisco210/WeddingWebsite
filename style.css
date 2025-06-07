@@ -86,20 +86,23 @@ h2 {
   background-color: #697357;
   color: #ffffff;
   width: 100%;
-  height: 100%;
+  height: 100vh; /* Exactly the viewport height */
   min-height: 100vh;
-  padding-top: 15vh;
-  padding-bottom: 3vh;
+  max-height: 100vh;
+  padding: 0; /* Remove top padding for exact fit */
   text-align: center;
   margin: 0;
   background-image: linear-gradient(
       rgba(105, 115, 87, 0.6),
       rgba(105, 115, 87, 0.6)
     ),
-    /* tint */ url("./img/fontainebleau.jpg");
+    url("./img/fontainebleau.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Vertically center content */
 }
 
 #content {
@@ -114,12 +117,12 @@ h2 {
 
 .iframe-container {
   display: flex;
-  flex-direction: column; /* Stack children vertically */
-  justify-content: center; /* Center vertically (now along column) */
-  align-items: center; /* Center horizontally */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   width: 100%;
   margin: 0 auto;
-  height: auto; /* Let height be determined by content */
+  height: auto;
 }
 
 .nav-header {
