@@ -91,7 +91,7 @@ h2 {
   align-items: center;
 }
 
-#header {
+.header {
   background-color: var(--color-bg-accent);
   color: var(--color-text-accent);
   width: 100%;
@@ -101,14 +101,17 @@ h2 {
   padding: 0; /* Remove top padding for exact fit */
   text-align: center;
   margin: 0;
-  background-image: linear-gradient(var(--color-bg-tint), var(--color-bg-tint)),
-    url("./img/fontainebleau.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
   justify-content: center; /* Vertically center content */
+}
+
+#fontainbleau-header {
+  background-image: linear-gradient(var(--color-bg-tint), var(--color-bg-tint)),
+    url("../img/fontainebleau.jpg");
 }
 
 #footer {
