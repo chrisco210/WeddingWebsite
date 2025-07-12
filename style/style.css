@@ -27,6 +27,27 @@
   font-style: italic;
 }
 
+@font-face {
+  font-family: "Ppeiko Medium";
+  src: url("./fonts/PPEiko-Medium.otf") format("opentype");
+  font-weight: 699;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ppeiko Heavy";
+  src: url("./fonts/PPEiko-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ppeiko Light";
+  src: url("./fonts/ppeiko-light.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -196,4 +217,27 @@ h2 {
 .top-bottom-padded {
   padding-top: 4vh;
   padding-bottom: 4vh;
+}
+
+#save-the-date-link {
+  display: inline-block;
+  padding: 0.7em 1.5em;
+  border: 2px solid var(--color-bg-accent);
+  border-radius: 8px;
+  color: var(--color-text-main);
+  font-family: "Ppeiko Medium", serif;
+  font-size: 1.1rem;
+  font-variant: small-caps;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #ffa400;
+  color: #000000;
+}
+
+#save-the-date-link:hover,
+#save-the-date-link:focus {
+  color: #ffa400;
+  background: #000000;
 }
