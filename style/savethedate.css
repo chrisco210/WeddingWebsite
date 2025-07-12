@@ -51,24 +51,48 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 100vh;
+  text-align: center;
+  flex-direction: column;
+  margin: 0;
   height: 100vh;
-  width: 100vw;
 }
 
-#content {
+#card {
+  background-color: var(--color-bg-main);
   color: var(--color-text-main);
-  width: 45%;
-  height: 50%;
-  padding: 1%;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative; /* Make #card the positioning context */
+  /* width: 100%; */
+  /* height: 100%; */
+}
+
+@media (min-width: 1201px) {
+  #card {
+    width: 45%;
+    /* height: 60vh; */
+  }
+}
+
+@media (max-width: 1200px) {
+  #card {
+    width: 95%;
+    height: 80vh;
+  }
 }
 
 #inside-line {
-  width: 100%;
-  height: 100%;
-  /* padding: 1%; */
-  /* margin: 1%; */
-  border: 3px double #000; /* Two lines effect */
+  width: 94%;
+  height: 94%;
+  padding: 4%;
+  border: 3px double #000;
+  box-sizing: border-box;
+  background: var(--color-bg-main);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
