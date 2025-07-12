@@ -1,7 +1,21 @@
 @font-face {
-  font-family: "Ppeiko Light";
-  src: url("./fonts/PPEiko-Medium.otf") format("woff2");
+  font-family: "Ppeiko Medium";
+  src: url("./fonts/PPEiko-Medium.otf") format("opentype");
   font-weight: 699;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ppeiko Heavy";
+  src: url("./fonts/PPEiko-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ppeiko Light";
+  src: url("./fonts/ppeiko-light.woff2") format("woff2");
+  font-weight: 400;
   font-style: normal;
 }
 
@@ -16,9 +30,20 @@ h2,
 h3,
 h4,
 h5,
-h6,
+h6 {
+  font-family: "Ppeiko Medium";
+}
+
 p {
   font-family: "Ppeiko Light";
+  font-variant: small-caps;
+}
+
+#arched-header-text {
+  font-family: "Ppeiko Medium";
+  font-size: 2.5rem;
+  text-align: center;
+  margin: 0;
 }
 
 body {
@@ -26,12 +51,24 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
 }
 
 #content {
   color: var(--color-text-main);
-  width: 50%;
+  width: 45%;
   height: 50%;
+  padding: 1%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#inside-line {
+  width: 100%;
+  height: 100%;
+  /* padding: 1%; */
+  /* margin: 1%; */
+  border: 3px double #000; /* Two lines effect */
 }

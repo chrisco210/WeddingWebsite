@@ -8,8 +8,51 @@
   </head>
   <body class="header">
     <div id="content">
-      <h1>Save the Date</h1>
-      <h1>Veuve Cliquot</h1>
+      <div id="inside-line">
+        <!-- <h1 id="arched-header-text">Save the Date</h1> -->
+        <svg
+          id="arched-header-text"
+          width="400"
+          height="140"
+          viewBox="0 0 400 140"
+          style="display: block; margin: 0 auto 0.2em auto"
+        >
+          <defs>
+            <!-- Main text arc -->
+            <path id="arch1" d="M 40 100 A 160 40 0 0 1 360 100" />
+            <!-- Lower arc: moved down and made slightly flatter for more spacing -->
+            <path id="arch2" d="M 80 100 A 160 40 0 0 1 320 100" />
+          </defs>
+          <text
+            font-family="Ppeiko Medium, serif"
+            font-size="2.5rem"
+            fill="#000000"
+            letter-spacing="0"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-variant="small-caps"
+          >
+            <textPath href="#arch1" startOffset="50%">SAVE THE DATE</textPath>
+          </text>
+          <text
+            font-family="Ppeiko Light, serif"
+            font-size="1.1rem"
+            fill="#000000"
+            letter-spacing="0"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-variant="small-caps"
+          >
+            <textPath href="#arch2" startOffset="50%">
+              for the wedding of
+            </textPath>
+          </text>
+        </svg>
+        <h2>Elena Chatrchyan & Christopher Rachlinski</h2>
+        <h3>MAISON FONDEE EN AUGUST 15TH, 2026</h3>
+        <h2>FINGER LAKES<br />NEW YORK</h2>
+        <a href="./index.html" class="button-link">More information</a>
+      </div>
     </div>
   </body>
 </html>
