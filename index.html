@@ -2,111 +2,56 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>ELENA &amp; CHRIS • Wedding Website</title>
+    <title>Save the Date • ELENA &amp; CHRIS</title>
     <link rel="stylesheet" href="style/style.css" />
+    <link rel="stylesheet" href="style/savethedate.css" />
   </head>
   <body>
-    <script src="style/index.js"></script>
-    <div class="header" id="fontainbleau-header">
-      <div class="container">
-        <section id="home">
-          <h1>ELENA &amp; CHRIS</h1>
-          <p class="subtitle">August 15, 2026 • Ithaca, NY</p>
-          <p id="countdown"></p>
-          <p>Ceremony TBD PM at Lawrence Chapel • 2770 NY-228, Alpine, NY</p>
-          <p>
-            Reception to follow at Fontainebleau Inn • 2800 NY-228, Alpine, NY
-          </p>
-        </section>
-        <nav class="nav-header">
-          <a href="#home">Home</a>
-          <a href="#venue">Venue</a>
-          <a href="#schedule">Schedule</a>
-          <a href="#accommodations">Accommodations</a>
-          <a href="#registry">Registry</a>
-        </nav>
-      </div>
-    </div>
-    <div id="content" class="top-bottom-padded">
-      <div class="container">
-        <h2 id="venue">Venue Details</h2>
-        <p>
-          Wedding ceremony will be held at Aug 15, 2026 TBD PM at the Lawrence
-          Chapel, which is located at 2800 NY-228 Alpine NY, ~30 minutes from
-          Ithaca and ~20 minutes from Watkins Glen. Following the ceremony we
-          are delighted to invite you to the reception, which will be held at
-          the Fontainebleau Inn, located at 2800 NY-228, Alpine, NY.
-        </p>
-        <p>
-          The Inn is within walking distance (300 yards) from the Fontainebleau
-          Inn. We recommend you park at the Fontainebleau Inn for the ceremony,
-          and walk over. A limited number of parking spots are available
-          directly at the chapel for guests who may have difficulty walking up
-          the steps.
-        </p>
-        <p>
-          Note the inn is on Cayu<em>ta</em> Lake (not Cayu<em>ga</em> lake).
-        </p>
-        <p>
-          After the ceremony, please proceed directly to the Inn for a cocktail
-          hour! Formal attire requested!
-        </p>
-        <div class="resource-container">
-          <iframe
-            src="https://www.google.com/maps/d/u/0/embed?mid=1pIdnP1Or6XE5A_tgr3Olein77KEYSDg&ehbc=2E312F&noprof=1"
-            width="500"
-            height="500"
-          ></iframe>
-          <p class="caption">Map of the wedding and reception venues</p>
-        </div>
-        <h2 id="schedule">Schedule</h2>
-        <p>X PM - Ceremony at Lawrence Chapel</p>
-        <p>X + 1 PM - Cocktail Hour at Fontainebleau Inn</p>
-        <p>X + 2 PM - Dinner and Dancing!</p>
-        <h2 id="accommodations">Accommodations</h2>
-        <p>
-          There are
-          <a
-            href="https://www.airbnb.com/s/Cayuta--NY/homes?refinement_paths%5B%5D=%2Fhomes&flexible_trip_lengths%5B%5D=one_week&monthly_start_date=2025-06-01&monthly_length=3&monthly_end_date=2025-09-01&price_filter_input_type=2&channel=EXPLORE&place_id=ChIJVS1QzVJk0IkRBWZ__smnfnY&acp_id=7d6964fe-da32-4baf-b677-d7f36ecbc8f7&date_picker_type=calendar&source=structured_search_input_header&search_type=user_map_move&query=Cayuta%2C%20NY&search_mode=regular_search&price_filter_num_nights=2&ne_lat=42.36977417087664&ne_lng=-76.7334443934368&sw_lat=42.36351264375664&sw_lng=-76.75177006723658&zoom=17.05219153839607&zoom_level=17.05219153839607&search_by_map=true&checkin=2026-08-14&checkout=2026-08-16"
-            target="_blank"
-            >several AirBNBs</a
-          >
-          located very close, we might coordinate booking these ourselves if
-          people are interested. Alternatively, we suggest staying in Ithaca
-          where we will set out a block of rooms, hotel TBD.
-        </p>
-        <h2 id="registry">Registry</h2>
-        <p>
-          Your presence at our wedding is the greatest gift of all. Should you
-          wish to honor us with a gift, we are registered at
-          <a
-            href="https://www.bloomingdales.com/registry/Elena-Chatrchyan-Chris-Rachlinski/1090987"
-            target="_blank"
-            >Bloomingdale's</a
-          >
-          and
-          <a
-            href="https://www.amazon.com/wedding/share/rachlinyan"
-            target="_blank"
-            >Amazon</a
-          >. For those who prefer to give a monetary gift, we will be gratefully
-          accepting them at the reception.
-        </p>
-      </div>
-    </div>
-    <div id="footer">
-      <div class="container">
-        <a
-          href="https://schuylerhistory.org/our-sites/lawrence-chapel/"
-          target="_blank"
+    <div id="card">
+      <div id="inside-line">
+        <!-- <h1 id="arched-header-text">Save the Date</h1> -->
+        <svg
+          id="arched-header-text"
+          width="400"
+          height="140"
+          viewBox="0 0 400 140"
+          style="display: block; margin: 0 auto 0.2em auto"
         >
-          <img
-            src="img/lawrence.png"
-            alt="Lawrence Chapel"
-            class="resource-container"
-            id="lawrence-chapel"
-          />
-        </a>
+          <defs>
+            <!-- Main text arc -->
+            <path id="arch1" d="M 40 100 A 160 40 0 0 1 360 100" />
+            <!-- Lower arc: moved down and made slightly flatter for more spacing -->
+            <path id="arch2" d="M 80 100 A 160 40 0 0 1 320 100" />
+          </defs>
+          <text
+            font-family="Ppeiko Medium, serif"
+            font-size="2.5rem"
+            fill="#000000"
+            letter-spacing="0"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-variant="small-caps"
+          >
+            <textPath href="#arch1" startOffset="50%">SAVE THE DATE</textPath>
+          </text>
+          <text
+            font-family="Ppeiko Light, serif"
+            font-size="1.1rem"
+            fill="#000000"
+            letter-spacing="0"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-variant="small-caps"
+          >
+            <textPath href="#arch2" startOffset="50%">
+              for the wedding of
+            </textPath>
+          </text>
+        </svg>
+        <h2>Elena Chatrchyan & Christopher Rachlinski</h2>
+        <h3>AUGUST 15TH, 2026</h3>
+        <h2>FINGER LAKES<br />NEW YORK</h2>
+        <a href="./index.html" class="button-link">More information</a>
       </div>
     </div>
   </body>
