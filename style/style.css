@@ -56,7 +56,8 @@ body {
 }
 
 p,
-li {
+li,
+strong {
   font-family: "Cormorant Infant", serif;
   font-size: 1.2rem;
   line-height: 1.6;
@@ -79,6 +80,10 @@ h1 {
 
 h2 {
   font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
 }
 
 .container {
