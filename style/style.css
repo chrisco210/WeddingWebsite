@@ -127,6 +127,10 @@ h3 {
   align-items: center;
 }
 
+.tiny {
+  font-size: 0.3em;
+}
+
 .header {
   background-color: var(--color-bg-accent);
   color: var(--color-text-accent);
