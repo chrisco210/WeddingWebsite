@@ -149,37 +149,6 @@ h3 {
   justify-content: center; /* Vertically center content */
 }
 
-#fontainbleau-header {
-  background-image: linear-gradient(var(--color-bg-tint), var(--color-bg-tint)),
-    url("../img/lake.jpg");
-}
-
-#footer {
-  background-color: var(--color-bg-accent);
-  color: var(--color-text-accent);
-  width: 100%;
-  height: auto; /* Adjusted for footer content */
-  padding: 2rem 0; /* Add padding for footer */
-  text-align: center;
-  margin: 0;
-}
-
-#content {
-  background-color: var(--color-bg-main);
-  color: var(--color-text-main);
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-}
-
-#lawrence-chapel {
-  max-width: 400px;
-}
-
 .resource-container {
   display: flex;
   flex-direction: column;
@@ -217,7 +186,7 @@ h3 {
   border: 2px solid var(--color-bg-accent);
   border-radius: 8px;
   color: var(--color-text-main);
-  font-family: "Ppeiko Medium", serif;
+  /* font-family: "Ppeiko Medium", serif; */
   font-size: 1.1rem;
   font-variant: small-caps;
   text-decoration: none;
@@ -226,8 +195,8 @@ h3 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.button-link:hover,
-.button-link:focus {
+.transition-button-link:hover,
+.transition-button-link:focus {
   background: var(--color-bg-accent);
   color: var(--color-bg-main);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
@@ -238,7 +207,42 @@ h3 {
   padding-bottom: 4vh;
 }
 
-#save-the-date-link {
+.accent-bg {
+  background-color: var(--color-bg-accent);
+}
+
+#fontainbleau-header {
+  background-image: linear-gradient(var(--color-bg-tint), var(--color-bg-tint)),
+    url("../img/lake.jpg");
+}
+
+#footer {
+  background-color: var(--color-bg-accent);
+  color: var(--color-text-accent);
+  width: 100%;
+  height: auto; /* Adjusted for footer content */
+  padding: 2rem 0; /* Add padding for footer */
+  text-align: center;
+  margin: 0;
+}
+
+#content {
+  background-color: var(--color-bg-main);
+  color: var(--color-text-main);
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#lawrence-chapel {
+  max-width: 400px;
+}
+
+.emphasis-button-link {
   display: inline-block;
   padding: 0.7em 1.5em;
   border: 2px solid var(--color-bg-accent);
@@ -255,8 +259,15 @@ h3 {
   color: #000000;
 }
 
-#save-the-date-link:hover,
-#save-the-date-link:focus {
+.emphasis-button-link:hover,
+.emphasis-button-link:focus {
   color: #ffa400;
   background: #000000;
+}
+
+#content .container .button-link {
+  display: inline-block;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
