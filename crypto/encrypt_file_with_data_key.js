@@ -1,12 +1,11 @@
 const fs = require("fs");
 const { webcrypto: crypto } = require("crypto");
-const { readDataKey } = require("./util");
+const { readDataKeyRaw } = require("./util");
 
 async function encrypt() {
-  const enc = new TextEncoder();
   const plaintext = fs.readFileSync("moreinfo_plaintext.html");
 
-  const dataKey = await readDataKey();
+  const dataKey = await readDataKeyRaw();
 
   console.log("Data key:" + dataKey);
 

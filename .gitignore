@@ -1,3 +1,2 @@
-crypto/secret_data_key
-crypto/valid_passwords_secret.json
+crypto/secret/*
 moreinfo_plaintext.html
