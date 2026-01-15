@@ -112,6 +112,8 @@ async function unlock() {
     );
 
     document.body = newContent.body;
+
+    updateCountdown();
   } catch (e) {
     console.error("Failed to decrypt page with valid password.", e);
     output.textContent = "Failed to decrypt page. Email me.";
