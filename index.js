@@ -106,9 +106,12 @@ async function unlock() {
       b64ToBytes(encryptedInfo.ciphertext)
     );
 
-    const newContent = new TextDecoder().decode(plaintext);
+    const newContent = new DOMParser().parseFromString(
+      new TextDecoder().decode(plaintext),
+      "text/html"
+    );
 
-    document.documentElement.innerHTML = newContent;
+    document.body = newContent.body;
   } catch (e) {
     console.error("Failed to decrypt page with valid password.", e);
     output.textContent = "Failed to decrypt page. Email me.";
