@@ -1,19 +1,6 @@
 const fs = require("fs");
 const { webcrypto: crypto } = require("crypto");
-
-async function readDataKey() {
-  const dataKeyRaw = fs.readFileSync("crypto/secret_data_key");
-  console.log("Data key raw: " + dataKeyRaw.length);
-  const dataKey = await crypto.subtle.importKey(
-    "raw",
-    new Uint8Array(dataKeyRaw),
-    "AES-GCM",
-    false,
-    ["encrypt"]
-  );
-
-  return dataKey;
-}
+const { readDataKey } = require("./util");
 
 async function encrypt() {
   const enc = new TextEncoder();
@@ -30,10 +17,12 @@ async function encrypt() {
     new Uint8Array(plaintext)
   );
 
-  fs.writeFileSync(
-    "encrypted_info.bin",
-    Buffer.from(new Uint8Array(ciphertext))
-  );
+  const encryptedInfo = {
+    iv: btoa(String.fromCharCode(...dataIv)),
+    ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+  };
+
+  fs.writeFileSync("encrypted_info.json", JSON.stringify(encryptedInfo));
 }
 
 encrypt();
