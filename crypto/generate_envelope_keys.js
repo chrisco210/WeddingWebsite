@@ -8,6 +8,7 @@ async function generateEnvelopeKeys(dataKeyRaw, passwords) {
 
   const keys = [];
   for (const password of passwords) {
+    console.log("Generating envelope key for password: " + password);
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
 
@@ -57,5 +58,5 @@ async function generateEnvelopeKeys(dataKeyRaw, passwords) {
 
   const envelopeKeys = await generateEnvelopeKeys(dataKeyRaw, passwords);
 
-  fs.writeFileSync("envelope_keys.json", JSON.stringify(envelopeKeys));
+  fs.writeFileSync("enveloped_keys.json", JSON.stringify(envelopeKeys));
 })();

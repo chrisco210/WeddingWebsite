@@ -1,8 +1,8 @@
 const fs = require("fs");
 const { webcrypto: crypto } = require("crypto");
 
-async function readDataKeyRaw() {
-  const dataKeyRaw = fs.readFileSync("crypto/secret/secret_data_key");
+async function readDataKey() {
+  const dataKeyRaw = readDataKeyRaw();
   const dataKey = await crypto.subtle.importKey(
     "raw",
     new Uint8Array(dataKeyRaw),
@@ -12,6 +12,10 @@ async function readDataKeyRaw() {
   );
 
   return dataKey;
+}
+
+function readDataKeyRaw() {
+  return fs.readFileSync("crypto/secret/secret_data_key");
 }
 
 function readPasswords() {
@@ -27,4 +31,4 @@ function readPasswords() {
   }
 }
 
-module.exports = { readDataKeyRaw, readPasswords };
+module.exports = { readDataKey, readDataKeyRaw, readPasswords };
