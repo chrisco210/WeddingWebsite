@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Save the Date • ELENA &amp; CHRIS</title>
     <link rel="stylesheet" href="style/style.css" />
     <!-- <link rel="stylesheet" href="style/savethedate.css" /> -->
-    <script src="index.js" async></script>
+    <script src="index.js"></script>
   </head>
   <body>
     <div id="content" class="top-bottom-padded">
@@ -14,9 +14,25 @@
           <div id="inside-line">
             <h2>Please enter the password on your invite</h2>
             <p>It should be on your invite — email me if you can’t find it.</p>
-            <input type="password" id="password" />
-            <button onclick="unlock()">Unlock</button>
-            <p id="output"></p>
+            <div class="input-form">
+              <input
+                type="password"
+                id="password"
+                class="button-link"
+                onkeydown="if (event.key === 'Enter') unlock();"
+              />
+              <label>
+                <input type="checkbox" id="remember" checked />
+                Remember password
+              </label>
+              <button
+                onclick="unlock()"
+                class="button-link transition-button-link"
+              >
+                Unlock
+              </button>
+              <p id="output"></p>
+            </div>
           </div>
         </div>
       </div>
