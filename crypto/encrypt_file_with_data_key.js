@@ -3,7 +3,7 @@ const { webcrypto: crypto } = require("crypto");
 const { readDataKey } = require("./util");
 
 async function encrypt() {
-  const plaintext = fs.readFileSync("moreinfo_plaintext.html");
+  const plaintext = fs.readFileSync("rsvp_plaintext.html");
 
   const dataKey = await readDataKey();
 
@@ -13,7 +13,7 @@ async function encrypt() {
   const ciphertext = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv: dataIv },
     dataKey,
-    new Uint8Array(plaintext)
+    new Uint8Array(plaintext),
   );
 
   const encryptedInfo = {

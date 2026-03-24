@@ -220,6 +220,12 @@ h3 {
     url("../img/lake.jpg");
 }
 
+#shower-header {
+  background-image:
+    linear-gradient(var(--color-bg-tint), var(--color-bg-tint)),
+    url("../img/placeholder.jpeg");
+}
+
 #footer {
   background-color: var(--color-bg-accent);
   color: var(--color-text-accent);

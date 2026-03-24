@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSVP - Secure</title>
+    <link rel="stylesheet" href="style/style.css" />
+    <link rel="stylesheet" href="style/savethedate.css" />
+    <style>
+      /* Use shared theme from style/style.css + style/savethedate.css */
+      body {
+        /* no override here: inherit background from shared stylesheet */
+      }
+
+      .card {
+        width: min(95vw, 840px);
+        min-height: min(80vh, 700px);
+        max-height: 95vh;
+        padding: clamp(1rem, 2.5vw, 2rem);
+      }
+
+      #unlock-panel {
+        width: 100%;
+        height: 100%;
+      }
+
+      #inside-line {
+        gap: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: stretch;
+      }
+
+      #unlock-panel label,
+      #unlock-panel input,
+      #unlock-panel a,
+      #output {
+        margin-block: 0.8rem;
+      }
+
+      #unlock-panel input[type="text"],
+      #unlock-panel input[type="password"] {
+        font-family: "Cormorant Infant", serif;
+        font-size: 1.1rem;
+        padding: clamp(0.65rem, 1.5vw, 0.95rem);
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      #unlock-btn {
+        margin-block-start: 0.6rem;
+      }
+
+      #output {
+        color: #a33;
+        min-height: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="unlock-panel" style="display: none">
+      <div id="inside-line">
+        <h2>Private RSVP</h2>
+        <p>Enter your RSVP password to decrypt.</p>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" />
+
+        <label>
+          <input type="checkbox" id="remember" /> Remember this device
+        </label>
+
+        <a
+          href="#"
+          class="button-link transition-button-link"
+          id="unlock-btn"
+          onclick="
+            unlock();
+            return false;
+          "
+          >Unlock</a
+        >
+
+        <div id="output"></div>
+      </div>
+    </div>
+
+    <script src="rsvp.js"></script>
+  </body>
+</html>
