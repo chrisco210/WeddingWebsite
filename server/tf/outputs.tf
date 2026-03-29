@@ -13,14 +13,9 @@ output "dynamodb_table_arn" {
   value       = aws_dynamodb_table.rsvp.arn
 }
 
-output "lambda_put_function_name" {
-  description = "PUT RSVP Lambda function name"
-  value       = aws_lambda_function.put_rsvp.function_name
-}
-
-output "lambda_get_function_name" {
-  description = "GET RSVP Lambda function name"
-  value       = aws_lambda_function.get_rsvp.function_name
+output "lambda_function_name" {
+  description = "RSVP Lambda function name"
+  value       = aws_lambda_function.rsvp.function_name
 }
 
 output "api_id" {

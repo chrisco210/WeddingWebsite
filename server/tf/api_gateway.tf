@@ -13,7 +13,7 @@ resource "aws_apigatewayv2_integration" "get_rsvp_integration" {
   api_id                 = aws_apigatewayv2_api.rsvp_api.id
   integration_type       = "AWS_PROXY"
   integration_method     = "POST"
-  integration_uri        = aws_lambda_function.get_rsvp.arn
+  integration_uri        = aws_lambda_function.rsvp.arn
   payload_format_version = "2.0"
 }
 
@@ -22,7 +22,7 @@ resource "aws_apigatewayv2_integration" "put_rsvp_integration" {
   api_id                 = aws_apigatewayv2_api.rsvp_api.id
   integration_type       = "AWS_PROXY"
   integration_method     = "POST"
-  integration_uri        = aws_lambda_function.put_rsvp.arn
+  integration_uri        = aws_lambda_function.rsvp.arn
   payload_format_version = "2.0"
 }
 
@@ -48,19 +48,19 @@ resource "aws_apigatewayv2_stage" "rsvp_stage" {
 }
 
 # Lambda permission for API Gateway to invoke GET function
-resource "aws_lambda_permission" "get_rsvp_api_permission" {
-  statement_id  = "AllowAPIGatewayInvoke"
+resource "aws_lambda_permission" "get_rsvp_apigw_permission" {
+  statement_id  = "AllowAPIGatewayInvokeGet"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.get_rsvp.function_name
+  function_name = aws_lambda_function.rsvp.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.rsvp_api.execution_arn}/*/*"
 }
 
 # Lambda permission for API Gateway to invoke PUT function
-resource "aws_lambda_permission" "put_rsvp_api_permission" {
-  statement_id  = "AllowAPIGatewayInvoke"
+resource "aws_lambda_permission" "put_rsvp_apigw_permission" {
+  statement_id  = "AllowAPIGatewayInvokePut"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.put_rsvp.function_name
+  function_name = aws_lambda_function.rsvp.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.rsvp_api.execution_arn}/*/*"
 }

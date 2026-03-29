@@ -2,3 +2,5 @@ crypto/secret/*
 moreinfo_plaintext.html
 rsvp_plaintext.html
 .DS_Store
+*/target*
+server/rsvp/target/

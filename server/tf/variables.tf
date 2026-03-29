@@ -16,16 +16,10 @@ variable "table_name" {
   default     = "wedding-rsvp"
 }
 
-variable "lambda_function_name_put" {
-  description = "Lambda function name for PUT RSVP"
+variable "lambda_function_name" {
+  description = "Lambda function name for RSVP"
   type        = string
-  default     = "rsvp-put"
-}
-
-variable "lambda_function_name_get" {
-  description = "Lambda function name for GET RSVP"
-  type        = string
-  default     = "rsvp-get"
+  default     = "rsvp"
 }
 
 variable "api_name" {
