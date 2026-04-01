@@ -41,7 +41,9 @@ fn error_response(status: i64, msg: &str) -> ApiGatewayProxyResponse {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
     let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let table_name =
         std::env::var("TABLE_NAME").unwrap_or_else(|_| "wedding-rsvp".to_string());
