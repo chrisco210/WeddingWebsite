@@ -1,16 +1,10 @@
 resource "aws_dynamodb_table" "rsvp" {
   name         = var.table_name
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "guest_id"
-  range_key    = "guest_email"
+  hash_key     = "party_id"
 
   attribute {
-    name = "guest_id"
-    type = "S"
-  }
-
-  attribute {
-    name = "guest_email"
+    name = "party_id"
     type = "S"
   }
 
