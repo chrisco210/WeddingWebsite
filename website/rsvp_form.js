@@ -6,7 +6,8 @@ function initRsvpForm() {
   if (!nameInput) return; // not on the RSVP form page
 
   const searchResults = document.getElementById("search-results");
-  const RSVP_API_BASE = searchResults.closest("[data-api-base]").dataset.apiBase;
+  const RSVP_API_BASE =
+    searchResults.closest("[data-api-base]").dataset.apiBase;
   const searchSection = document.getElementById("rsvp-search");
   const partySection = document.getElementById("rsvp-party");
   const partyNameEl = document.getElementById("party-name");
