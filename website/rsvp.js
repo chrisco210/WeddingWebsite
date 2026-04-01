@@ -184,6 +184,9 @@ async function updateDOM(dataKey, encryptedInfo) {
     if (typeof updateCountdown === "function") {
       updateCountdown();
     }
+    if (typeof initRsvpForm === "function") {
+      initRsvpForm();
+    }
   } catch (e) {
     console.error("Failed to decrypt page with valid password.", e);
     const output = document.getElementById("output");
