@@ -37,8 +37,7 @@ fn guest_list() -> &'static HashMap<String, PartyEntry> {
                 continue;
             }
             let mut parts = line.splitn(3, ',');
-            let (Some(id), Some(display), Some(name)) =
-                (parts.next(), parts.next(), parts.next())
+            let (Some(id), Some(display), Some(name)) = (parts.next(), parts.next(), parts.next())
             else {
                 continue;
             };
@@ -289,7 +288,9 @@ mod tests {
     }
 
     fn handler() -> HandlerImpl<MockRsvpStore> {
-        HandlerImpl { store: MockRsvpStore::new() }
+        HandlerImpl {
+            store: MockRsvpStore::new(),
+        }
     }
 
     // ── Search tests ──────────────────────────────────────────────────────────
@@ -304,19 +305,33 @@ mod tests {
     #[test]
     fn test_search_first_name_only() {
         let results = search_parties("Alice", 5);
-        assert!(results.iter().any(|m| m.party_id == "p002"), "expected p002");
+        assert!(
+            results.iter().any(|m| m.party_id == "p002"),
+            "expected p002"
+        );
     }
 
     #[test]
     fn test_search_last_name_only() {
         let results = search_parties("Williams", 5);
-        assert!(results.iter().any(|m| m.party_id == "p003"), "expected p003");
+        assert!(
+            results.iter().any(|m| m.party_id == "p003"),
+            "expected p003"
+        );
     }
 
     #[test]
     fn test_search_case_insensitive() {
-        assert!(search_parties("john smith", 5).iter().any(|m| m.party_id == "p001"));
-        assert!(search_parties("JOHN SMITH", 5).iter().any(|m| m.party_id == "p001"));
+        assert!(
+            search_parties("john smith", 5)
+                .iter()
+                .any(|m| m.party_id == "p001")
+        );
+        assert!(
+            search_parties("JOHN SMITH", 5)
+                .iter()
+                .any(|m| m.party_id == "p001")
+        );
     }
 
     #[test]
@@ -430,12 +445,23 @@ mod tests {
 
         let result = h.get_party("p001").await.unwrap();
 
-        let john = result.guests.iter().find(|g| g.name == "John Smith").unwrap();
+        let john = result
+            .guests
+            .iter()
+            .find(|g| g.name == "John Smith")
+            .unwrap();
         let john_rsvp = john.rsvp.as_ref().expect("John should have an RSVP");
         assert!(john_rsvp.attending);
-        assert_eq!(john_rsvp.dietary_restrictions.as_deref(), Some("vegetarian"));
+        assert_eq!(
+            john_rsvp.dietary_restrictions.as_deref(),
+            Some("vegetarian")
+        );
 
-        let jane = result.guests.iter().find(|g| g.name == "Jane Smith").unwrap();
+        let jane = result
+            .guests
+            .iter()
+            .find(|g| g.name == "Jane Smith")
+            .unwrap();
         let jane_rsvp = jane.rsvp.as_ref().expect("Jane should have an RSVP");
         assert!(!jane_rsvp.attending);
         assert!(jane_rsvp.dietary_restrictions.is_none());
@@ -468,10 +494,17 @@ mod tests {
         .unwrap();
 
         let result = h.get_party("p002").await.unwrap();
-        let alice = result.guests.iter().find(|g| g.name == "Alice Doe").unwrap();
+        let alice = result
+            .guests
+            .iter()
+            .find(|g| g.name == "Alice Doe")
+            .unwrap();
         let rsvp = alice.rsvp.as_ref().expect("Alice should have an RSVP");
 
-        assert!(rsvp.attending, "second submission should have overwritten the first");
+        assert!(
+            rsvp.attending,
+            "second submission should have overwritten the first"
+        );
         assert_eq!(rsvp.dietary_restrictions.as_deref(), Some("gluten-free"));
     }
 
@@ -494,7 +527,11 @@ mod tests {
         let result = h.get_party("p003").await.unwrap();
         assert_eq!(result.guests.len(), 3);
 
-        let carol = result.guests.iter().find(|g| g.name == "Carol Williams").unwrap();
+        let carol = result
+            .guests
+            .iter()
+            .find(|g| g.name == "Carol Williams")
+            .unwrap();
         assert!(carol.rsvp.is_some());
 
         let without_rsvp = result
@@ -524,7 +561,11 @@ mod tests {
         .unwrap();
 
         let result = h2.get_party("p001").await.unwrap();
-        let john = result.guests.iter().find(|g| g.name == "John Smith").unwrap();
+        let john = result
+            .guests
+            .iter()
+            .find(|g| g.name == "John Smith")
+            .unwrap();
         assert!(john.rsvp.is_some(), "h2 should see data written by h1");
     }
 }

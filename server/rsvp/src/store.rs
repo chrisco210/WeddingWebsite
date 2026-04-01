@@ -44,8 +44,8 @@ impl RsvpStore for DynamoRsvpStore {
     }
 
     async fn save(&self, party_id: &str, responses: &[GuestRsvp]) -> Result<(), HandlerError> {
-        let rsvp_json = serde_json::to_string(responses)
-            .map_err(|e| HandlerError::Internal(e.to_string()))?;
+        let rsvp_json =
+            serde_json::to_string(responses).map_err(|e| HandlerError::Internal(e.to_string()))?;
 
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
