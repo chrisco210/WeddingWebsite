@@ -12,7 +12,9 @@
     <div class="card rsvp-card">
       <div id="inside-line">
         <h2>RSVP</h2>
-        <div id="rsvp-search">
+
+        <!-- Search view -->
+        <div id="view-search">
           <p>Type your name to find your invitation.</p>
           <div class="input-form">
             <input
@@ -26,8 +28,49 @@
             <ul id="search-results"></ul>
           </div>
         </div>
+
+        <!-- Party form view -->
+        <div id="view-party" style="display: none">
+          <div id="party-name"></div>
+          <form id="rsvp-form">
+            <div id="guest-list"></div>
+            <p id="rsvp-status" aria-live="polite"></p>
+            <div class="rsvp-actions">
+              <button
+                type="submit"
+                id="submit-btn"
+                class="button-link transition-button-link"
+              >
+                Submit RSVP
+              </button>
+              <button
+                type="button"
+                id="back-btn"
+                class="button-link transition-button-link"
+              >
+                ← Search again
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Confirmation view -->
+        <div id="view-confirmation" style="display: none">
+          <div class="confirmation-content">
+            <h3>Thank you!</h3>
+            <p>We can't wait to celebrate with you!</p>
+            <div id="confirmation-summary"></div>
+            <button
+              type="button"
+              id="update-rsvp-btn"
+              class="button-link transition-button-link"
+            >
+              Update RSVP
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    <script src="rsvp_form.js"></script>
+    <script src="js/rsvp_app.js"></script>
   </body>
 </html>
