@@ -1,19 +1,28 @@
 const fs = require("fs");
+const path = require("path");
 const { webcrypto: crypto } = require("crypto");
 const { readDataKey } = require("./util");
 
 async function encrypt() {
-  const plaintext = fs.readFileSync("website/rsvp_plaintext.html");
+  const inputFile = process.argv[2];
+  if (!inputFile) {
+    console.error("Usage: node encrypt_file_with_data_key.js <input-file>");
+    process.exit(1);
+  }
+
+  const plaintext = fs.readFileSync(inputFile, "utf8").trim();
+  const outputFile = path.join(
+    path.dirname(inputFile),
+    path.basename(inputFile, path.extname(inputFile)) + "_encrypted.json",
+  );
 
   const dataKey = await readDataKey();
-
-  console.log("Data key:" + dataKey);
 
   const dataIv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv: dataIv },
     dataKey,
-    new Uint8Array(plaintext),
+    new TextEncoder().encode(plaintext),
   );
 
   const encryptedInfo = {
@@ -21,10 +30,8 @@ async function encrypt() {
     ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
   };
 
-  fs.writeFileSync(
-    "website/encrypted_info.json",
-    JSON.stringify(encryptedInfo),
-  );
+  fs.writeFileSync(outputFile, JSON.stringify(encryptedInfo));
+  console.log(`Encrypted ${inputFile} -> ${outputFile}`);
 }
 
 encrypt();

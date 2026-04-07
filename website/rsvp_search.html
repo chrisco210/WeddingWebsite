@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSVP</title>
+    <link rel="stylesheet" href="style/style.css" />
+    <link rel="stylesheet" href="style/savethedate.css" />
+    <link rel="stylesheet" href="style/rsvp_form.css" />
+  </head>
+  <body class="rsvp-form-body">
+    <div class="card rsvp-card">
+      <div id="inside-line">
+        <h2>RSVP</h2>
+        <div id="rsvp-search">
+          <p>Type your name to find your invitation.</p>
+          <div class="input-form">
+            <input
+              type="text"
+              id="name-search"
+              class="button-link"
+              placeholder="Your name"
+              autocomplete="off"
+            />
+            <p>Select the party you wish to RSVP for</p>
+            <ul id="search-results"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="rsvp_form.js"></script>
+  </body>
+</html>

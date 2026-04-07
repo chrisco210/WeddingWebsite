@@ -166,7 +166,7 @@ async function decryptDataKey(kek, entry) {
 
 async function updateDOM(dataKey, encryptedInfo) {
   try {
-    console.log("Found valid password, decrypting page.");
+    console.log("Found valid password, decrypting API endpoint.");
 
     const plaintext = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv: b64ToBytes(encryptedInfo.iv) },
@@ -174,21 +174,10 @@ async function updateDOM(dataKey, encryptedInfo) {
       b64ToBytes(encryptedInfo.ciphertext),
     );
 
-    const newContent = new DOMParser().parseFromString(
-      new TextDecoder().decode(plaintext),
-      "text/html",
-    );
-
-    document.body = newContent.body;
-
-    if (typeof updateCountdown === "function") {
-      updateCountdown();
-    }
-    if (typeof initRsvpForm === "function") {
-      initRsvpForm();
-    }
+    const apiBase = new TextDecoder().decode(plaintext);
+    window.location.href = `rsvp_search.html?api_base=${encodeURIComponent(apiBase)}`;
   } catch (e) {
-    console.error("Failed to decrypt page with valid password.", e);
+    console.error("Failed to decrypt with valid password.", e);
     const output = document.getElementById("output");
     if (output) {
       output.textContent = "Failed to decrypt page. Email me.";
