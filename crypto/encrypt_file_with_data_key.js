@@ -1,5 +1,4 @@
 const fs = require("fs");
-const path = require("path");
 const { webcrypto: crypto } = require("crypto");
 const { readDataKey } = require("./util");
 
@@ -11,10 +10,7 @@ async function encrypt() {
   }
 
   const plaintext = fs.readFileSync(inputFile, "utf8").trim();
-  const outputFile = path.join(
-    path.dirname(inputFile),
-    path.basename(inputFile, path.extname(inputFile)) + "_encrypted.json",
-  );
+  const outputFile = "website/encrypted_info.json";
 
   const dataKey = await readDataKey();
 
