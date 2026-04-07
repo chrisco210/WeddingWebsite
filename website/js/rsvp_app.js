@@ -591,10 +591,27 @@ class RsvpController {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
-window.addEventListener("DOMContentLoaded", () => {
+const getSHA256Hash = async (input) => {
+  const textAsBuffer = new TextEncoder().encode(input);
+  const hashBuffer = await window.crypto.subtle.digest("SHA-256", textAsBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hash = hashArray
+    .map((item) => item.toString(16).padStart(2, "0"))
+    .join("");
+  return hash;
+};
+
+const expectedApiUrlHash =
+  "a79b45fe6f111e42269fd2e5373a2cfa54f3e09825f2c81347d1e22037d644e3";
+
+window.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
   const apiBase = params.get("api_base");
-  if (!apiBase) {
+
+  const hash = await getSHA256Hash(apiBase);
+
+  if (!apiBase || hash != expectedApiUrlHash) {
+    console.log(`API URL not recognized: ${apiBase}`);
     window.location.href = "rsvp.html";
     return;
   }
