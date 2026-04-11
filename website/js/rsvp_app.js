@@ -544,7 +544,7 @@ class RsvpController {
 
       const dietaryRestrictions = this._dietaryRestrictions[guest.name] || null;
 
-      if (dietaryRestrictions.length > 100) {
+      if (dietaryRestrictions && dietaryRestrictions.length > 100) {
         this.view.setStatusMessage(
           `Maximum length of dietary restrictions is 100 characters.`,
         );
