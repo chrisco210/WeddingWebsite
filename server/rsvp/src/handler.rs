@@ -1,128 +1,13 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::OnceLock;
 
 use aws_lambda_events::{apigw::ApiGatewayProxyResponse, http::HeaderMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+pub use crate::guest_list::NameSimilaritySearcher;
 pub use crate::store::RsvpStore;
 
-// ── Embedded guest list ───────────────────────────────────────────────────────
-// Edit guests.csv (in the same directory as this file) to add your guests.
-// Format: party_id,party_display_name,guest_name
-// Lines beginning with '#' and blank lines are ignored.
-
-const GUEST_CSV: &'static str = include_str!("guests.csv");
-
 const MAXIMUM_LENGTH: usize = 100;
-
-#[derive(Debug, Clone)]
-struct GuestEntry {
-    name: String,
-    aliases: Vec<&'static str>,
-}
-
-#[derive(Debug, Clone)]
-struct PartyEntry {
-    id: String,
-    display_name: String,
-    guests: Vec<GuestEntry>,
-}
-
-static GUEST_LIST: OnceLock<HashMap<String, PartyEntry>> = OnceLock::new();
-
-fn guest_list() -> &'static HashMap<String, PartyEntry> {
-    GUEST_LIST.get_or_init(|| {
-        let mut map: HashMap<String, PartyEntry> = HashMap::new();
-        for line in GUEST_CSV.lines() {
-            let line = line.trim();
-            if line.is_empty() || line.starts_with('#') {
-                continue;
-            }
-            let mut parts = line.splitn(4, ',');
-            let (Some(id), Some(display), Some(name), Some(alias)) =
-                (parts.next(), parts.next(), parts.next(), parts.next())
-            else {
-                panic!("Invalid guests.csv")
-            };
-            let id = id.trim().to_string();
-            let display = display.trim().to_string();
-            let name = name.trim().to_string();
-            let entry = map.entry(id.clone()).or_insert_with(|| PartyEntry {
-                id,
-                display_name: display,
-                guests: Vec::new(),
-            });
-
-            let aliases = if alias.is_empty() {
-                vec![]
-            } else {
-                vec![alias]
-            };
-
-            entry.guests.push(GuestEntry { name, aliases });
-        }
-        map
-    })
-}
-
-// ── Fuzzy / phonetic name search ─────────────────────────────────────────────
-
-fn score_name(guest_name: &str, guest_aliases: &[&str], query: &str) -> f64 {
-    let guest_lower = guest_name.to_lowercase();
-    let query_lower = query.to_lowercase();
-
-    if guest_lower.contains(&query_lower) {
-        return 1.0;
-    }
-
-    let full_score = strsim::jaro_winkler(&guest_lower, &query_lower);
-
-    let mut guest_words: Vec<&str> = guest_lower.split_whitespace().collect();
-    guest_words.extend_from_slice(guest_aliases);
-
-    let query_words: Vec<&str> = query_lower.split_whitespace().collect();
-    let word_score: f64 = query_words
-        .iter()
-        .map(|qw| {
-            guest_words
-                .iter()
-                .map(|gw| strsim::jaro_winkler(qw, gw))
-                .fold(0.0_f64, f64::max)
-        })
-        .sum::<f64>()
-        / query_words.len().max(1) as f64;
-
-    full_score.max(word_score)
-}
-
-fn search_parties(query: &str, max_results: usize) -> Vec<SearchMatch> {
-    const THRESHOLD: f64 = 0.75;
-
-    let mut scored: Vec<(f64, &PartyEntry)> = guest_list()
-        .values()
-        .filter_map(|party| {
-            let best = party
-                .guests
-                .iter()
-                .map(|g| score_name(&g.name, &g.aliases, query))
-                .fold(0.0_f64, f64::max);
-            (best >= THRESHOLD).then_some((best, party))
-        })
-        .collect();
-
-    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-
-    scored
-        .into_iter()
-        .take(max_results)
-        .map(|(_, p)| SearchMatch {
-            party_id: p.id.clone(),
-            display_name: p.display_name.clone(),
-            guest_names: p.guests.iter().map(|g| g.name.clone()).collect(),
-        })
-        .collect()
-}
 
 // ── Public DTOs ───────────────────────────────────────────────────────────────
 
@@ -197,22 +82,33 @@ impl From<HandlerError> for ApiGatewayProxyResponse {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 #[derive(Clone)]
-pub struct HandlerImpl<S> {
+pub struct HandlerImpl<S, G> {
     pub store: S,
+    pub guest_list: G,
 }
 
-impl<S: RsvpStore> HandlerImpl<S> {
+impl<S: RsvpStore, G: NameSimilaritySearcher> HandlerImpl<S, G> {
     /// Fuzzy-search guests by name; returns up to 5 matching parties.
     pub fn search(&self, query: &str) -> SearchResult {
-        SearchResult {
-            matches: search_parties(query, 5),
-        }
+        let matches = self
+            .guest_list
+            .search(query)
+            .into_iter()
+            .take(5)
+            .map(|(_, p)| SearchMatch {
+                party_id: p.id.clone(),
+                display_name: p.display_name.clone(),
+                guest_names: p.guests.iter().map(|g| g.name.clone()).collect(),
+            })
+            .collect();
+        SearchResult { matches }
     }
 
     /// Return a party's guests along with any previously submitted RSVP data.
     pub async fn get_party(&self, party_id: &str) -> Result<PartyResult, HandlerError> {
-        let party = guest_list()
-            .get(party_id)
+        let party = self
+            .guest_list
+            .get_party(party_id)
             .ok_or_else(|| HandlerError::NotFound(format!("party '{party_id}' not found")))?;
 
         let existing: HashMap<String, GuestRsvp> = self
@@ -241,7 +137,7 @@ impl<S: RsvpStore> HandlerImpl<S> {
 
     /// Validate and persist RSVP responses for a party.
     pub async fn submit_rsvp(&self, input: PutRsvpInput) -> Result<(), HandlerError> {
-        let party = guest_list().get(&input.party_id).ok_or_else(|| {
+        let party = self.guest_list.get_party(&input.party_id).ok_or_else(|| {
             HandlerError::NotFound(format!("party '{}' not found", input.party_id))
         })?;
 
@@ -272,6 +168,9 @@ impl<S: RsvpStore> HandlerImpl<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::guest_list::{CsvNameSearcher, GuestEntry, PartyEntry};
+    use crate::store::RsvpStore;
+    use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
 
     // ── Mock store ────────────────────────────────────────────────────────────
@@ -308,9 +207,74 @@ mod tests {
         }
     }
 
-    fn handler() -> HandlerImpl<MockRsvpStore> {
+    // ── Test guest data ───────────────────────────────────────────────────────
+
+    fn test_guest_map() -> HashMap<String, PartyEntry> {
+        let mut map = HashMap::new();
+
+        map.insert(
+            "p001".to_string(),
+            PartyEntry {
+                id: "p001".to_string(),
+                display_name: "Smith Family".to_string(),
+                guests: vec![
+                    GuestEntry {
+                        name: "John Smith".to_string(),
+                        aliases: vec![],
+                    },
+                    GuestEntry {
+                        name: "Jane Smith".to_string(),
+                        aliases: vec![],
+                    },
+                ],
+            },
+        );
+
+        map.insert(
+            "p002".to_string(),
+            PartyEntry {
+                id: "p002".to_string(),
+                display_name: "Doe Family".to_string(),
+                guests: vec![GuestEntry {
+                    name: "Alice Doe".to_string(),
+                    aliases: vec![],
+                }],
+            },
+        );
+
+        map.insert(
+            "p003".to_string(),
+            PartyEntry {
+                id: "p003".to_string(),
+                display_name: "Williams Family".to_string(),
+                guests: vec![
+                    GuestEntry {
+                        name: "Emma Williams".to_string(),
+                        aliases: vec![],
+                    },
+                    GuestEntry {
+                        name: "Carol Williams".to_string(),
+                        aliases: vec![],
+                    },
+                    GuestEntry {
+                        name: "Bob Williams".to_string(),
+                        aliases: vec![],
+                    },
+                ],
+            },
+        );
+
+        map
+    }
+
+    fn test_searcher() -> CsvNameSearcher {
+        CsvNameSearcher::new(test_guest_map())
+    }
+
+    fn handler() -> HandlerImpl<MockRsvpStore, CsvNameSearcher> {
         HandlerImpl {
             store: MockRsvpStore::new(),
+            guest_list: test_searcher(),
         }
     }
 
@@ -318,14 +282,14 @@ mod tests {
 
     #[test]
     fn test_search_exact_full_name() {
-        let results = search_parties("John Smith", 5);
+        let results = handler().search("John Smith").matches;
         assert!(!results.is_empty(), "expected a match for 'John Smith'");
         assert!(results.iter().any(|m| m.party_id == "p001"));
     }
 
     #[test]
     fn test_search_first_name_only() {
-        let results = search_parties("Alice", 5);
+        let results = handler().search("Alice").matches;
         assert!(
             results.iter().any(|m| m.party_id == "p002"),
             "expected p002"
@@ -334,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_search_last_name_only() {
-        let results = search_parties("Williams", 5);
+        let results = handler().search("Williams").matches;
         assert!(
             results.iter().any(|m| m.party_id == "p003"),
             "expected p003"
@@ -344,12 +308,16 @@ mod tests {
     #[test]
     fn test_search_case_insensitive() {
         assert!(
-            search_parties("john smith", 5)
+            handler()
+                .search("john smith")
+                .matches
                 .iter()
                 .any(|m| m.party_id == "p001")
         );
         assert!(
-            search_parties("JOHN SMITH", 5)
+            handler()
+                .search("JOHN SMITH")
+                .matches
                 .iter()
                 .any(|m| m.party_id == "p001")
         );
@@ -358,7 +326,7 @@ mod tests {
     #[test]
     fn test_search_fuzzy_typo() {
         // "Jon Smith" is a one-character typo of "John Smith"
-        let results = search_parties("Jon Smith", 5);
+        let results = handler().search("Jon Smith").matches;
         assert!(
             results.iter().any(|m| m.party_id == "p001"),
             "fuzzy search should match 'John Smith' for 'Jon Smith'"
@@ -367,12 +335,12 @@ mod tests {
 
     #[test]
     fn test_search_no_match_gibberish() {
-        assert!(search_parties("xqzgibberish", 5).is_empty());
+        assert!(handler().search("xqzgibberish").matches.is_empty());
     }
 
     #[test]
     fn test_search_result_includes_all_party_guests() {
-        let results = search_parties("Smith", 5);
+        let results = handler().search("Smith").matches;
         let smith = results.iter().find(|m| m.party_id == "p001").unwrap();
         assert!(smith.guest_names.contains(&"John Smith".to_string()));
         assert!(smith.guest_names.contains(&"Jane Smith".to_string()));
@@ -380,13 +348,13 @@ mod tests {
 
     #[test]
     fn test_search_result_count_capped_at_limit() {
-        assert!(search_parties("Smith", 1).len() <= 1);
+        assert!(handler().search("Smith").matches.len() <= 5);
     }
 
     #[test]
     fn test_search_results_ordered_by_score() {
         // Exact substring match should rank first
-        let results = search_parties("Emma Williams", 5);
+        let results = handler().search("Emma Williams").matches;
         assert!(!results.is_empty());
         assert_eq!(results[0].party_id, "p003");
     }

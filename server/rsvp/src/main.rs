@@ -1,3 +1,4 @@
+pub(crate) mod guest_list;
 pub(crate) mod handler;
 pub(crate) mod store;
 
@@ -6,6 +7,7 @@ use lambda_runtime::{Error, LambdaEvent, service_fn};
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::guest_list::CsvNameSearcher;
 use crate::handler::{HandlerError, HandlerImpl, PutRsvpInput};
 use crate::store::DynamoRsvpStore;
 
@@ -51,6 +53,7 @@ async fn main() -> Result<(), Error> {
             client: aws_sdk_dynamodb::Client::new(&config),
             table_name,
         },
+        guest_list: CsvNameSearcher::init_static(),
     };
 
     lambda_runtime::run(service_fn(move |event: LambdaEvent<Value>| {
@@ -62,7 +65,7 @@ async fn main() -> Result<(), Error> {
 
 async fn run_lambda(
     event: LambdaEvent<Value>,
-    handler: HandlerImpl<DynamoRsvpStore>,
+    handler: HandlerImpl<DynamoRsvpStore, &'static CsvNameSearcher>,
 ) -> Result<ApiGatewayProxyResponse, Error> {
     let payload = &event.payload;
 
