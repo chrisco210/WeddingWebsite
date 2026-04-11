@@ -12,13 +12,14 @@ pub use crate::store::RsvpStore;
 // Format: party_id,party_display_name,guest_name
 // Lines beginning with '#' and blank lines are ignored.
 
-const GUEST_CSV: &str = include_str!("guests.csv");
+const GUEST_CSV: &'static str = include_str!("guests.csv");
 
 const MAXIMUM_LENGTH: usize = 100;
 
 #[derive(Debug, Clone)]
 struct GuestEntry {
     name: String,
+    aliases: Vec<&'static str>,
 }
 
 #[derive(Debug, Clone)]
@@ -38,10 +39,11 @@ fn guest_list() -> &'static HashMap<String, PartyEntry> {
             if line.is_empty() || line.starts_with('#') {
                 continue;
             }
-            let mut parts = line.splitn(3, ',');
-            let (Some(id), Some(display), Some(name)) = (parts.next(), parts.next(), parts.next())
+            let mut parts = line.splitn(4, ',');
+            let (Some(id), Some(display), Some(name), Some(alias)) =
+                (parts.next(), parts.next(), parts.next(), parts.next())
             else {
-                continue;
+                panic!("Invalid guests.csv")
             };
             let id = id.trim().to_string();
             let display = display.trim().to_string();
@@ -51,7 +53,14 @@ fn guest_list() -> &'static HashMap<String, PartyEntry> {
                 display_name: display,
                 guests: Vec::new(),
             });
-            entry.guests.push(GuestEntry { name });
+
+            let aliases = if alias.is_empty() {
+                vec![]
+            } else {
+                vec![alias]
+            };
+
+            entry.guests.push(GuestEntry { name, aliases });
         }
         map
     })
@@ -59,7 +68,7 @@ fn guest_list() -> &'static HashMap<String, PartyEntry> {
 
 // ── Fuzzy / phonetic name search ─────────────────────────────────────────────
 
-fn score_name(guest_name: &str, query: &str) -> f64 {
+fn score_name(guest_name: &str, guest_aliases: &[&str], query: &str) -> f64 {
     let guest_lower = guest_name.to_lowercase();
     let query_lower = query.to_lowercase();
 
@@ -69,7 +78,9 @@ fn score_name(guest_name: &str, query: &str) -> f64 {
 
     let full_score = strsim::jaro_winkler(&guest_lower, &query_lower);
 
-    let guest_words: Vec<&str> = guest_lower.split_whitespace().collect();
+    let mut guest_words: Vec<&str> = guest_lower.split_whitespace().collect();
+    guest_words.extend_from_slice(guest_aliases);
+
     let query_words: Vec<&str> = query_lower.split_whitespace().collect();
     let word_score: f64 = query_words
         .iter()
@@ -94,7 +105,7 @@ fn search_parties(query: &str, max_results: usize) -> Vec<SearchMatch> {
             let best = party
                 .guests
                 .iter()
-                .map(|g| score_name(&g.name, query))
+                .map(|g| score_name(&g.name, &g.aliases, query))
                 .fold(0.0_f64, f64::max);
             (best >= THRESHOLD).then_some((best, party))
         })
