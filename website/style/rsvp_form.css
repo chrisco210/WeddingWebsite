@@ -232,6 +232,7 @@ body.rsvp-form-body {
   box-sizing: border-box;
   font-size: 0.95rem;
   padding: 0.5em 0.8em;
+  margin-top: 0.6em;
 }
 
 /* ── Status & actions ────────────────────────────────────────────────────── */

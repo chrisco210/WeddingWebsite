@@ -14,6 +14,8 @@ pub use crate::store::RsvpStore;
 
 const GUEST_CSV: &str = include_str!("guests.csv");
 
+const MAXIMUM_LENGTH: usize = 100;
+
 #[derive(Debug, Clone)]
 struct GuestEntry {
     name: String,
@@ -238,6 +240,14 @@ impl<S: RsvpStore> HandlerImpl<S> {
                 return Err(HandlerError::BadRequest(format!(
                     "'{}' is not in party '{}'",
                     response.name, input.party_id
+                )));
+            }
+
+            if let Some(dietary_restrictions) = &response.dietary_restrictions
+                && dietary_restrictions.len() > MAXIMUM_LENGTH
+            {
+                return Err(HandlerError::BadRequest(format!(
+                    "Maximum length of dietary restrictions is 100 characters."
                 )));
             }
         }

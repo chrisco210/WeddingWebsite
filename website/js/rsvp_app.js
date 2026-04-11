@@ -5,7 +5,7 @@
  * @typedef {{ name: string, rsvp: GuestRsvp | null }} Guest
  * @typedef {{ partyId: string, displayName: string, guests: Guest[] }} Party
  * @typedef {{ partyId: string, displayName: string, guestNames: string[] }} SearchMatch
- * @typedef {{ name: string, attending: boolean }} RsvpResponse
+ * @typedef {{ name: string, attending: boolean, dietaryRestrictions: string | null }} RsvpResponse
  *
  * @typedef {{ party: Party, editable: boolean }} PartyFormData
  * @typedef {{ partyId: string, responses: RsvpResponse[] }} ConfirmedData
@@ -80,6 +80,7 @@ class RsvpApi {
         responses: responses.map((r) => ({
           name: r.name,
           attending: r.attending,
+          dietary_restrictions: r.dietaryRestrictions || null,
         })),
       }),
     });
@@ -239,8 +240,16 @@ class RsvpView {
    * @param {Party} party
    * @param {{ [guestName: string]: boolean | null }} selections  Current attendance selections.
    * @param {(guestName: string, isYes: boolean) => void} onToggle  Called on each toggle.
+   * @param {{ [guestName: string]: string }} dietaryRestrictions  Current dietary restriction values.
+   * @param {(guestName: string, text: string) => void} onDietaryChange  Called on dietary input change.
    */
-  renderPartyEditable(party, selections, onToggle) {
+  renderPartyEditable(
+    party,
+    selections,
+    onToggle,
+    dietaryRestrictions,
+    onDietaryChange,
+  ) {
     this._showOnly(this.partyView);
     this.partyName.innerHTML = `<h3>${party.displayName}</h3><p class="rsvp-form-title">RSVP</p>`;
     this.rsvpStatus.textContent = "";
@@ -251,7 +260,13 @@ class RsvpView {
 
     for (const guest of party.guests) {
       this.guestList.appendChild(
-        this._buildEditableCard(guest, selections[guest.name], onToggle),
+        this._buildEditableCard(
+          guest,
+          selections[guest.name],
+          onToggle,
+          dietaryRestrictions[guest.name],
+          onDietaryChange,
+        ),
       );
     }
   }
@@ -284,11 +299,15 @@ class RsvpView {
       .map((r) => {
         const cls = r.attending ? "rsvp-badge--yes" : "rsvp-badge--no";
         const label = r.attending ? "Attending" : "Not Attending";
+        const dietaryHtml =
+          r.attending && r.dietaryRestrictions
+            ? `<span class="rsvp-dietary">${r.dietaryRestrictions}</span>`
+            : "";
         return `
           <div class="guest-card guest-card--readonly">
             <p class="guest-name">${r.name}</p>
             <div class="rsvp-summary">
-              <span class="rsvp-badge ${cls}">${label}</span>
+              <span class="rsvp-badge ${cls}">${label}</span>${dietaryHtml}
             </div>
           </div>`;
       })
@@ -339,9 +358,17 @@ class RsvpView {
    * @param {Guest} guest
    * @param {boolean | null} selectedAttending
    * @param {(guestName: string, isYes: boolean) => void} onToggle
+   * @param {string} dietaryValue
+   * @param {(guestName: string, text: string) => void} onDietaryChange
    * @returns {HTMLElement}
    */
-  _buildEditableCard(guest, selectedAttending, onToggle) {
+  _buildEditableCard(
+    guest,
+    selectedAttending,
+    onToggle,
+    dietaryValue,
+    onDietaryChange,
+  ) {
     const card = document.createElement("div");
     card.className = "guest-card";
 
@@ -353,7 +380,14 @@ class RsvpView {
       <div class="attend-toggle">
         <button type="button" class="attend-btn${yesClass}" data-attending="true">Attending</button>
         <button type="button" class="attend-btn${noClass}" data-attending="false">Not Attending</button>
-      </div>`;
+      </div>
+      <input type="text" class="dietary-input" placeholder="Dietary restrictions (optional)">`;
+
+    const dietaryInput = card.querySelector(".dietary-input");
+    dietaryInput.value = dietaryValue || "";
+    dietaryInput.addEventListener("input", (e) => {
+      onDietaryChange(guest.name, e.target.value);
+    });
 
     card.querySelectorAll(".attend-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -389,6 +423,8 @@ class RsvpController {
     this._pendingRequestId = 0;
     /** @type {{ [guestName: string]: boolean | null }} */
     this._selections = {};
+    /** @type {{ [guestName: string]: string }} */
+    this._dietaryRestrictions = {};
   }
 
   /** Attach DOM event listeners and render the initial search state. */
@@ -481,6 +517,15 @@ class RsvpController {
   }
 
   /**
+   * Record a dietary restrictions change from the view.
+   * @param {string} guestName
+   * @param {string} text
+   */
+  onDietaryChange(guestName, text) {
+    this._dietaryRestrictions[guestName] = text;
+  }
+
+  /**
    * Validate selections, then submit the RSVP and transition to the confirmation state.
    * Re-enables the submit button and shows an error message if the request fails.
    */
@@ -496,7 +541,21 @@ class RsvpController {
         );
         return;
       }
-      responses.push({ name: guest.name, attending });
+
+      const dietaryRestrictions = this._dietaryRestrictions[guest.name] || null;
+
+      if (dietaryRestrictions.length > 100) {
+        this.view.setStatusMessage(
+          `Maximum length of dietary restrictions is 100 characters.`,
+        );
+        return;
+      }
+
+      responses.push({
+        name: guest.name,
+        attending,
+        dietaryRestrictions,
+      });
     }
 
     this.view.setSubmitting(true);
@@ -553,8 +612,11 @@ class RsvpController {
    */
   _initSelections(party) {
     this._selections = {};
+    this._dietaryRestrictions = {};
     for (const guest of party.guests) {
       this._selections[guest.name] = guest.rsvp?.attending ?? null;
+      this._dietaryRestrictions[guest.name] =
+        guest.rsvp?.dietaryRestrictions ?? "";
     }
   }
 
@@ -574,6 +636,8 @@ class RsvpController {
             party,
             this._selections,
             (name, isYes) => this.onAttendToggle(name, isYes),
+            this._dietaryRestrictions,
+            (name, text) => this.onDietaryChange(name, text),
           );
         } else {
           this.view.renderPartyReadOnly(party, () => this.onEditClick(party));
