@@ -4,3 +4,14 @@ moreinfo_plaintext.html
 */target*
 server/rsvp/target/
 server/rsvp/src/guests.csv
+
+# Added by cargo
+
+/target
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target

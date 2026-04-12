@@ -1,11 +1,11 @@
 resource "aws_lambda_function" "rsvp" {
-  filename         = "../rsvp/target/lambda/rsvp/bootstrap.zip"
+  filename         = "../target/lambda/rsvp/bootstrap.zip"
   function_name    = var.lambda_function_name
   role             = aws_iam_role.lambda_role.arn
   handler          = "rust.handler"
   runtime          = "provided.al2023"
   architectures    = ["arm64"]
-  source_code_hash = filebase64sha256("../rsvp/target/lambda/rsvp/bootstrap.zip")
+  source_code_hash = filebase64sha256("../target/lambda/rsvp/bootstrap.zip")
 
 
   environment {

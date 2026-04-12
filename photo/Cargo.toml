@@ -1,0 +1,17 @@
+[package]
+name = "photo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lambda_runtime = "1.1.2"
+serde_json = "1.0.149"
+tokio = { version = "1.50.0", features = ["full"] }
+aws_lambda_events = { version = "0.8.3", default-features = false, features = ["apigw"] }
+thiserror = "2.0.18"
+serde = { version = "1.0.228", features = ["derive"] }
+aws-sdk-dynamodb = "1"
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+strsim = "0.11"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
