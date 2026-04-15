@@ -170,7 +170,7 @@ h3 {
   color: var(--color-text-accent);
   text-decoration: none;
   font-family: "Tenor Sans", sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   letter-spacing: 0.05em;
   transition: color 0.2s;
 }
@@ -256,12 +256,12 @@ h3 {
 
 .emphasis-button-link {
   display: inline-block;
-  padding: 0.7em 1.5em;
+  padding: 1em 2.2em;
   border: 2px solid var(--color-bg-accent);
   border-radius: 8px;
   color: var(--color-text-main);
   font-family: "Ppeiko Medium", serif;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-variant: small-caps;
   text-decoration: none;
   text-align: center;
