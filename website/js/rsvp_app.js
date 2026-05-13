@@ -442,9 +442,9 @@ class RsvpController {
       this.onFormSubmit();
     });
 
-    document
-      .getElementById("back-btn")
-      .addEventListener("click", () => this.onBackClick());
+    // document
+    //   .getElementById("back-btn")
+    //   .addEventListener("click", () => this.onBackClick());
 
     document
       .getElementById("update-rsvp-btn")
