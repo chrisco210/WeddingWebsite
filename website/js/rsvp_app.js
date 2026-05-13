@@ -446,6 +446,9 @@ class RsvpController {
       .getElementById("update-rsvp-btn")
       .addEventListener("click", () => this.onUpdateRsvpClick());
 
+    window.addEventListener("popstate", (e) => this._onPopState(e));
+
+    history.replaceState({ view: State.SEARCH }, "");
     this.model.transition(State.SEARCH);
   }
 
@@ -587,6 +590,22 @@ class RsvpController {
     this.model.transition(State.SEARCH);
   }
 
+  /** @param {PopStateEvent} e */
+  _onPopState(e) {
+    const s = e.state;
+    if (!s || s.view === State.SEARCH) {
+      this._pendingRequestId++;
+      this.model.transition(State.SEARCH);
+    } else if (s.view === State.PARTY_FORM) {
+      this.onPartySelect(s.partyId);
+    } else if (s.view === State.CONFIRMED) {
+      this.model.transition(State.CONFIRMED, {
+        partyId: s.partyId,
+        responses: s.responses,
+      });
+    }
+  }
+
   // ── Private helpers ──────────────────────────────────────────────────────────
 
   /** @param {string} query */
@@ -627,6 +646,10 @@ class RsvpController {
         break;
       case State.PARTY_FORM: {
         const { party, editable } = /** @type {PartyFormData} */ (data);
+        const hs = history.state;
+        if (hs?.view !== State.PARTY_FORM || hs?.partyId !== party.partyId) {
+          history.pushState({ view: State.PARTY_FORM, partyId: party.partyId }, "");
+        }
         if (editable) {
           this.view.renderPartyEditable(
             party,
@@ -641,7 +664,10 @@ class RsvpController {
         break;
       }
       case State.CONFIRMED: {
-        const { responses } = /** @type {ConfirmedData} */ (data);
+        const { partyId, responses } = /** @type {ConfirmedData} */ (data);
+        if (history.state?.view !== State.CONFIRMED) {
+          history.pushState({ view: State.CONFIRMED, partyId, responses }, "");
+        }
         this.view.renderConfirmation(responses);
         break;
       }
