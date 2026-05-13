@@ -13,6 +13,10 @@ resource "aws_dynamodb_table" "rsvp" {
     enabled        = true
   }
 
+  point_in_time_recovery {
+    enabled = true
+  }
+
   tags = {
     Environment = var.environment
     Name        = var.table_name
