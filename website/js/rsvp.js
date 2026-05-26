@@ -1,5 +1,6 @@
 const SAVED_KEK_KEY = "saved_kek_result";
 const SAVED_IV_KEY = "saved_kek_iv";
+const DEFAULT_PASSWORD = "chris31";
 
 function b64ToBytes(b64) {
   return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -196,9 +197,22 @@ async function init() {
     return;
   }
 
-  const panel = document.getElementById("unlock-panel");
-  if (panel) {
-    panel.style.display = "block";
+  const result = await tryPasswords(DEFAULT_PASSWORD, envelopedKeys);
+
+  if (result) {
+    const exportKek = await crypto.subtle.exportKey("raw", result.kek);
+    const exportKekb64 = btoa(
+      String.fromCharCode(...new Uint8Array(exportKek)),
+    );
+    localStorage.setItem(SAVED_KEK_KEY, exportKekb64);
+    localStorage.setItem(SAVED_IV_KEY, result.iv);
+    await updateDOM(result.dek, encryptedInfo);
+    return;
+  }
+
+  const output = document.getElementById("output");
+  if (output) {
+    output.textContent = "Failed to load. Please email me.";
   }
 }
 

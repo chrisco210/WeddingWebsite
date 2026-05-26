@@ -11,24 +11,7 @@
   <body>
     <div class="card">
       <div id="inside-line">
-        <h2>Please enter the password on your invite</h2>
-        <p>It should be on your invite — email me if you can’t find it.</p>
-        <div class="input-form">
-          <input
-            type="password"
-            id="password"
-            class="button-link"
-            onkeydown="if (event.key === 'Enter') unlock();"
-          />
-          <label>
-            <input type="checkbox" id="remember" checked />
-            Remember password
-          </label>
-          <button onclick="unlock()" class="button-link transition-button-link">
-            Unlock
-          </button>
-          <p id="output"></p>
-        </div>
+        <p id="output">Loading...</p>
       </div>
     </div>
     <script src="js/rsvp.js"></script>
