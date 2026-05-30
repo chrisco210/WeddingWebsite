@@ -1,7 +1,4 @@
 use std::collections::HashMap;
-use std::sync::OnceLock;
-
-const GUEST_CSV: &'static str = include_str!("guests.csv");
 
 // ── Data types ────────────────────────────────────────────────────────────────
 
@@ -18,54 +15,69 @@ pub struct PartyEntry {
     pub guests: Vec<GuestEntry>,
 }
 
-// ── Trait ─────────────────────────────────────────────────────────────────────
-
-/// Searches a guest list by name similarity and supports party lookup by ID.
-pub trait NameSimilaritySearcher {
-    /// Returns all parties whose guests score above the similarity threshold for
-    /// `query`, sorted descending by score.
-    fn search(&self, query: &str) -> Vec<(f64, &PartyEntry)>;
-
-    /// Looks up a party by its exact ID.
-    fn get_party(&self, party_id: &str) -> Option<&PartyEntry>;
+pub trait GuestListFactory<G: GuestList> {
+    fn new(&self) -> G;
 }
 
-// Blanket implementation so that `&T` is also a searcher when `T` is.
-impl<T: NameSimilaritySearcher> NameSimilaritySearcher for &T {
-    fn search(&self, query: &str) -> Vec<(f64, &PartyEntry)> {
-        (*self).search(query)
-    }
+// ── GuestList trait ───────────────────────────────────────────────────────────
 
+/// Read-only interface over the backing guest data store.
+pub trait GuestList {
+    fn get_party(&self, party_id: &str) -> Option<&PartyEntry>;
+    fn all_parties(&self) -> Vec<&PartyEntry>;
+}
+
+impl<T: GuestList> GuestList for &T {
     fn get_party(&self, party_id: &str) -> Option<&PartyEntry> {
         (*self).get_party(party_id)
     }
+
+    fn all_parties(&self) -> Vec<&PartyEntry> {
+        (*self).all_parties()
+    }
 }
 
-// ── CsvNameSearcher ───────────────────────────────────────────────────────────
-
 #[derive(Clone)]
-pub struct CsvNameSearcher {
+pub struct MapGuestList {
     map: HashMap<String, PartyEntry>,
 }
 
-impl CsvNameSearcher {
-    /// Construct a searcher from an existing map (useful for tests).
+impl MapGuestList {
+    /// Construct from an existing map (useful for tests).
     pub fn new(map: HashMap<String, PartyEntry>) -> Self {
         Self { map }
     }
+}
 
-    /// Initialise from the embedded CSV exactly once and return a static
-    /// reference.  This is the entry point for production use.
-    pub fn init_static() -> &'static Self {
-        static INSTANCE: OnceLock<CsvNameSearcher> = OnceLock::new();
-        INSTANCE.get_or_init(|| Self {
-            map: Self::load_csv(),
-        })
+impl GuestList for MapGuestList {
+    fn get_party(&self, party_id: &str) -> Option<&PartyEntry> {
+        self.map.get(party_id)
     }
 
-    fn load_csv() -> HashMap<String, PartyEntry> {
+    fn all_parties(&self) -> Vec<&PartyEntry> {
+        self.map.values().collect()
+    }
+}
+
+// Static CSV based guest list
+
+#[derive(Clone)]
+pub struct CsvGuestListFactory {
+    content: &'static str,
+}
+
+impl CsvGuestListFactory {
+    pub const fn new(content: &'static str) -> Self {
+        Self { content }
+    }
+}
+
+impl GuestListFactory<MapGuestList> for CsvGuestListFactory {
+    /// Initialise from the embedded CSV exactly once and return a static
+    /// reference.  This is the entry point for production use.
+    fn new(&self) -> MapGuestList {
         let mut map: HashMap<String, PartyEntry> = HashMap::new();
-        for line in GUEST_CSV.lines() {
+        for line in self.content.lines() {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') {
                 continue;
@@ -93,64 +105,6 @@ impl CsvNameSearcher {
 
             entry.guests.push(GuestEntry { name, aliases });
         }
-        map
-    }
-}
-
-// ── Fuzzy / phonetic scoring ──────────────────────────────────────────────────
-
-fn score_name(guest_name: &str, guest_aliases: &[&str], query: &str) -> f64 {
-    let guest_lower = guest_name.to_lowercase();
-    let query_lower = query.to_lowercase();
-
-    if guest_lower.contains(&query_lower) {
-        return 1.0;
-    }
-
-    let full_score = strsim::jaro_winkler(&guest_lower, &query_lower);
-
-    let mut guest_words: Vec<&str> = guest_lower.split_whitespace().collect();
-    guest_words.extend_from_slice(guest_aliases);
-
-    let query_words: Vec<&str> = query_lower.split_whitespace().collect();
-    let word_score: f64 = query_words
-        .iter()
-        .map(|qw| {
-            guest_words
-                .iter()
-                .map(|gw| strsim::jaro_winkler(qw, gw))
-                .fold(0.0_f64, f64::max)
-        })
-        .sum::<f64>()
-        / query_words.len().max(1) as f64;
-
-    full_score.max(word_score)
-}
-
-// ── NameSimilaritySearcher impl ───────────────────────────────────────────────
-
-impl NameSimilaritySearcher for CsvNameSearcher {
-    fn search(&self, query: &str) -> Vec<(f64, &PartyEntry)> {
-        const THRESHOLD: f64 = 0.75;
-
-        let mut scored: Vec<(f64, &PartyEntry)> = self
-            .map
-            .values()
-            .filter_map(|party| {
-                let best = party
-                    .guests
-                    .iter()
-                    .map(|g| score_name(&g.name, &g.aliases, query))
-                    .fold(0.0_f64, f64::max);
-                (best >= THRESHOLD).then_some((best, party))
-            })
-            .collect();
-
-        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-        scored
-    }
-
-    fn get_party(&self, party_id: &str) -> Option<&PartyEntry> {
-        self.map.get(party_id)
+        MapGuestList::new(map)
     }
 }

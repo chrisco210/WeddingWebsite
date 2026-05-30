@@ -4,7 +4,7 @@ use aws_lambda_events::{apigw::ApiGatewayProxyResponse, http::HeaderMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub use crate::guest_list::NameSimilaritySearcher;
+pub use crate::name_searcher::NameSimilaritySearcher;
 pub use crate::store::RsvpStore;
 
 const MAXIMUM_LENGTH: usize = 100;
@@ -168,7 +168,8 @@ impl<S: RsvpStore, G: NameSimilaritySearcher> HandlerImpl<S, G> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::guest_list::{CsvNameSearcher, GuestEntry, PartyEntry};
+    use crate::guest_list::{GuestEntry, MapGuestList, PartyEntry};
+    use crate::name_searcher::FuzzyNameSearcher;
     use crate::store::RsvpStore;
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
@@ -267,11 +268,11 @@ mod tests {
         map
     }
 
-    fn test_searcher() -> CsvNameSearcher {
-        CsvNameSearcher::new(test_guest_map())
+    fn test_searcher() -> FuzzyNameSearcher<MapGuestList> {
+        FuzzyNameSearcher::new(MapGuestList::new(test_guest_map()))
     }
 
-    fn handler() -> HandlerImpl<MockRsvpStore, CsvNameSearcher> {
+    fn handler() -> HandlerImpl<MockRsvpStore, FuzzyNameSearcher<MapGuestList>> {
         HandlerImpl {
             store: MockRsvpStore::new(),
             guest_list: test_searcher(),
