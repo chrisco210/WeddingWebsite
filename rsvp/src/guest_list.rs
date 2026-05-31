@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
+use xxhash_rust::xxh3::xxh3_64;
+
 use crate::guest_list::ParseCsvError::InvalidCsvError;
 
 // ── Data types ────────────────────────────────────────────────────────────────
@@ -77,12 +79,13 @@ fn parse_guest_csv(guest_csv_str: String) -> Result<HashMap<String, PartyEntry>,
             continue;
         }
         let mut parts = line.splitn(4, ',');
-        let (Some(id), Some(display), Some(name), Some(alias)) =
-            (parts.next(), parts.next(), parts.next(), parts.next())
+        let (Some(display), Some(name), Some(alias)) = (parts.next(), parts.next(), parts.next())
         else {
             return Err(InvalidCsvError(line.to_string()));
         };
-        let id = id.trim().to_string();
+
+        let id = xxh3_64(display.as_bytes()).to_string();
+
         let display = display.trim().to_string();
         let name = name.trim().to_string();
         let entry = map.entry(id.clone()).or_insert_with(|| PartyEntry {

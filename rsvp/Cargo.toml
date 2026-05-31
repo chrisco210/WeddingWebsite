@@ -17,3 +17,5 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 aws-sdk-s3 = "1"
 anyhow = "1.0.102"
+xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
+
