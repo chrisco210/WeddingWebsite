@@ -10,7 +10,9 @@ resource "aws_lambda_function" "rsvp" {
 
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.rsvp.name
+      TABLE_NAME            = aws_dynamodb_table.rsvp.name
+      GUEST_LIST_BUCKET     = aws_s3_bucket.guest_list.bucket
+      GUEST_LIST_OBJECT_KEY = var.guest_list_object_key
     }
   }
 }

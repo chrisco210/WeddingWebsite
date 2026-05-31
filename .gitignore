@@ -2,9 +2,9 @@ crypto/secret/*
 moreinfo_plaintext.html
 .DS_Store
 */target*
-server/rsvp/target/
-server/rsvp/src/guests.csv
-
+rsvp/target/
+rsvp/src/guests.csv
+rsvp/tf/guests.csv
 # Added by cargo
 
 /target

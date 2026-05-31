@@ -27,3 +27,9 @@ variable "api_name" {
   type        = string
   default     = "wedding-rsvp-api"
 }
+
+variable "guest_list_object_key" {
+  description = "S3 object key for the guest list CSV"
+  type        = string
+  default     = "guests.csv"
+}
