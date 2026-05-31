@@ -63,20 +63,6 @@ impl GuestList for MapGuestList {
     }
 }
 
-// Static CSV based guest list
-
-#[allow(unused)]
-#[derive(Clone)]
-pub struct CsvGuestListFactory {
-    content: &'static str,
-}
-
-impl CsvGuestListFactory {
-    pub const fn new(content: &'static str) -> Self {
-        Self { content }
-    }
-}
-
 #[derive(Debug, Error)]
 enum ParseCsvError {
     #[error("Found invalid CSV when parsing {0}")]
@@ -115,15 +101,6 @@ fn parse_guest_csv(guest_csv_str: String) -> Result<HashMap<String, PartyEntry>,
     }
 
     Ok(map)
-}
-
-impl GuestListFactory<MapGuestList> for CsvGuestListFactory {
-    /// Initialise from the embedded CSV exactly once and return a static
-    /// reference.  This is the entry point for production use.
-    fn build(&self) -> MapGuestList {
-        let map = parse_guest_csv(self.content.to_string()).expect("Invalid guests.csv");
-        MapGuestList::new(map)
-    }
 }
 
 // S3 backed guest list factory

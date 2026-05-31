@@ -8,7 +8,7 @@ use lambda_runtime::{Error, LambdaEvent, service_fn};
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::guest_list::{CsvGuestListFactory, GuestListFactory, MapGuestList, S3GuestListFactory};
+use crate::guest_list::{GuestListFactory, MapGuestList, S3GuestListFactory};
 use crate::handler::{HandlerError, HandlerImpl, PutRsvpInput};
 use crate::name_searcher::FuzzyNameSearcher;
 use crate::store::DynamoRsvpStore;
