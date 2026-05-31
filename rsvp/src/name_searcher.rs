@@ -25,7 +25,7 @@ impl<T: NameSimilaritySearcher> NameSimilaritySearcher for &T {
 
 // ── Fuzzy / phonetic scoring ──────────────────────────────────────────────────
 
-fn score_name(guest_name: &str, guest_aliases: &[&str], query: &str) -> f64 {
+fn score_name(guest_name: &str, guest_aliases: &[String], query: &str) -> f64 {
     let guest_lower = guest_name.to_lowercase();
     let query_lower = query.to_lowercase();
 
@@ -36,7 +36,7 @@ fn score_name(guest_name: &str, guest_aliases: &[&str], query: &str) -> f64 {
     let full_score = strsim::jaro_winkler(&guest_lower, &query_lower);
 
     let mut guest_words: Vec<&str> = guest_lower.split_whitespace().collect();
-    guest_words.extend_from_slice(guest_aliases);
+    guest_words.extend(guest_aliases.iter().map(|s| s.as_str()));
 
     let query_words: Vec<&str> = query_lower.split_whitespace().collect();
     let word_score: f64 = query_words

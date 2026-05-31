@@ -19,7 +19,7 @@ static GUEST_CSV: &'static str = include_str!("guests.csv");
 fn init_guest_list() -> &'static MapGuestList {
     static INSTANCE: OnceLock<MapGuestList> = OnceLock::new();
     static FACTORY: CsvGuestListFactory = CsvGuestListFactory::new(GUEST_CSV);
-    INSTANCE.get_or_init(|| GuestListFactory::new(&FACTORY))
+    INSTANCE.get_or_init(|| GuestListFactory::build(&FACTORY))
 }
 
 fn json_response<V: Serialize>(val: V) -> ApiGatewayProxyResponse {

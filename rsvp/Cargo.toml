@@ -15,3 +15,5 @@ aws-config = { version = "1", features = ["behavior-version-latest"] }
 strsim = "0.11"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+aws-sdk-s3 = "1"
+anyhow = "1.0.102"
