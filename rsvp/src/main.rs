@@ -8,18 +8,25 @@ use lambda_runtime::{Error, LambdaEvent, service_fn};
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::guest_list::{CsvGuestListFactory, GuestListFactory, MapGuestList};
+use crate::guest_list::{CsvGuestListFactory, GuestListFactory, MapGuestList, S3GuestListFactory};
 use crate::handler::{HandlerError, HandlerImpl, PutRsvpInput};
 use crate::name_searcher::FuzzyNameSearcher;
 use crate::store::DynamoRsvpStore;
 use std::sync::OnceLock;
 
-static GUEST_CSV: &'static str = include_str!("guests.csv");
-
-fn init_guest_list() -> &'static MapGuestList {
+async fn init_guest_list(
+    s3_client: aws_sdk_s3::Client,
+    bucket_name: String,
+    object_key: String,
+    expected_bucket_owner: String,
+) -> &'static MapGuestList {
     static INSTANCE: OnceLock<MapGuestList> = OnceLock::new();
-    static FACTORY: CsvGuestListFactory = CsvGuestListFactory::new(GUEST_CSV);
-    INSTANCE.get_or_init(|| GuestListFactory::build(&FACTORY))
+
+    let guest_list_factory: S3GuestListFactory =
+        S3GuestListFactory::new(s3_client, bucket_name, object_key, expected_bucket_owner)
+            .await
+            .expect("Initialize S3 Guest List factory");
+    INSTANCE.get_or_init(|| GuestListFactory::build(&guest_list_factory))
 }
 
 fn json_response<V: Serialize>(val: V) -> ApiGatewayProxyResponse {
@@ -59,12 +66,25 @@ async fn main() -> Result<(), Error> {
         .init();
     let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let table_name = std::env::var("TABLE_NAME").unwrap_or_else(|_| "wedding-rsvp".to_string());
+    let bucket_name = std::env::var("GUEST_LIST_BUCKET").expect("GUEST_LIST_BUCKET must be set");
+    let object_key =
+        std::env::var("GUEST_LIST_OBJECT_KEY").expect("GUEST_LIST_OBJECT_KEY must be set");
+    let account_id = std::env::var("ACCOUNT_ID").expect("ACCOUNT_ID must be set");
+
+    let guest_list = init_guest_list(
+        aws_sdk_s3::Client::new(&config),
+        bucket_name,
+        object_key,
+        account_id,
+    )
+    .await;
+
     let handler = HandlerImpl {
         store: DynamoRsvpStore {
             client: aws_sdk_dynamodb::Client::new(&config),
             table_name,
         },
-        guest_list: FuzzyNameSearcher::new(init_guest_list()),
+        guest_list: FuzzyNameSearcher::new(guest_list),
     };
 
     lambda_runtime::run(service_fn(move |event: LambdaEvent<Value>| {
