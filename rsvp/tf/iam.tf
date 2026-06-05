@@ -45,9 +45,12 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject"]
-        Resource = "${aws_s3_bucket.guest_list.arn}/${var.guest_list_object_key}"
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = [
+          "${aws_s3_bucket.guest_list.arn}/${var.guest_list_object_key}",
+          "${aws_s3_bucket.guest_list.arn}/${var.welcome_party_object_key}",
+        ]
       }
     ]
   })
