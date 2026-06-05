@@ -5,6 +5,7 @@ moreinfo_plaintext.html
 rsvp/target/
 rsvp/src/guests.csv
 rsvp/tf/guests.csv
+rsvp/tf/welcome_party.txt
 # Added by cargo
 
 /target

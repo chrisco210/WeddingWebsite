@@ -33,3 +33,9 @@ variable "guest_list_object_key" {
   type        = string
   default     = "guests.csv"
 }
+
+variable "welcome_party_object_key" {
+  description = "S3 object key for the welcome party guest list"
+  type        = string
+  default     = "welcome_party.txt"
+}

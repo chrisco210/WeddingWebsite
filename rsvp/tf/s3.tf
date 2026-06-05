@@ -31,6 +31,13 @@ resource "aws_s3_object" "guests_csv" {
   etag   = filemd5("${path.module}/guests.csv")
 }
 
+resource "aws_s3_object" "welcome_party" {
+  bucket = aws_s3_bucket.guest_list.bucket
+  key    = var.welcome_party_object_key
+  source = "${path.module}/welcome_party.txt"
+  etag   = filemd5("${path.module}/welcome_party.txt")
+}
+
 resource "aws_s3_bucket_public_access_block" "guest_list" {
   bucket = aws_s3_bucket.guest_list.id
 
