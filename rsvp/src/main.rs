@@ -76,7 +76,7 @@ async fn main() -> Result<(), Error> {
     let guest_list_key =
         std::env::var("GUEST_LIST_OBJECT_KEY").expect("GUEST_LIST_OBJECT_KEY must be set");
     let welcome_dinner_key =
-        std::env::var("WELCOME_DINNER_OBJECT_KEY").expect("WELCOME_DINNER_OBJECT_KEY must be set");
+        std::env::var("WELCOME_PARTY_OBJECT_KEY").expect("WELCOME_PARTY_OBJECT_KEY must be set");
     let account_id = std::env::var("ACCOUNT_ID").expect("ACCOUNT_ID must be set");
 
     let guest_list = init_guest_list(
