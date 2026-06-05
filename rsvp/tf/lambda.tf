@@ -12,10 +12,11 @@ resource "aws_lambda_function" "rsvp" {
 
   environment {
     variables = {
-      TABLE_NAME            = aws_dynamodb_table.rsvp.name
-      GUEST_LIST_BUCKET     = aws_s3_bucket.guest_list.bucket
-      GUEST_LIST_OBJECT_KEY = var.guest_list_object_key
-      ACCOUNT_ID            = data.aws_caller_identity.current.account_id
+      TABLE_NAME                  = aws_dynamodb_table.rsvp.name
+      GUEST_LIST_BUCKET           = aws_s3_bucket.guest_list.bucket
+      GUEST_LIST_OBJECT_KEY       = var.guest_list_object_key
+      WELCOME_PARTY_OBJECT_KEY    = var.welcome_party_object_key
+      ACCOUNT_ID                  = data.aws_caller_identity.current.account_id
     }
   }
 }
