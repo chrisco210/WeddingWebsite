@@ -17,15 +17,21 @@ use std::sync::OnceLock;
 async fn init_guest_list(
     s3_client: aws_sdk_s3::Client,
     bucket_name: String,
-    object_key: String,
     expected_bucket_owner: String,
+    guest_list_key: String,
+    welcome_dinner_key: String,
 ) -> &'static MapGuestList {
     static INSTANCE: OnceLock<MapGuestList> = OnceLock::new();
 
-    let guest_list_factory: S3GuestListFactory =
-        S3GuestListFactory::new(s3_client, bucket_name, object_key, expected_bucket_owner)
-            .await
-            .expect("Initialize S3 Guest List factory");
+    let guest_list_factory: S3GuestListFactory = S3GuestListFactory::new(
+        s3_client,
+        bucket_name,
+        expected_bucket_owner,
+        guest_list_key,
+        welcome_dinner_key,
+    )
+    .await
+    .expect("Initialize S3 Guest List factory");
     INSTANCE.get_or_init(|| GuestListFactory::build(&guest_list_factory))
 }
 
@@ -67,15 +73,18 @@ async fn main() -> Result<(), Error> {
     let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let table_name = std::env::var("TABLE_NAME").unwrap_or_else(|_| "wedding-rsvp".to_string());
     let bucket_name = std::env::var("GUEST_LIST_BUCKET").expect("GUEST_LIST_BUCKET must be set");
-    let object_key =
+    let guest_list_key =
         std::env::var("GUEST_LIST_OBJECT_KEY").expect("GUEST_LIST_OBJECT_KEY must be set");
+    let welcome_dinner_key =
+        std::env::var("WELCOME_DINNER_OBJECT_KEY").expect("WELCOME_DINNER_OBJECT_KEY must be set");
     let account_id = std::env::var("ACCOUNT_ID").expect("ACCOUNT_ID must be set");
 
     let guest_list = init_guest_list(
         aws_sdk_s3::Client::new(&config),
         bucket_name,
-        object_key,
         account_id,
+        guest_list_key,
+        welcome_dinner_key,
     )
     .await;
 

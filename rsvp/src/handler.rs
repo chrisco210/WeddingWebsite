@@ -29,6 +29,8 @@ pub struct GuestRsvp {
     pub attending: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dietary_restrictions: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attending_welcome_dinner: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -42,6 +44,7 @@ pub struct PartyResult {
     pub party_id: String,
     pub display_name: String,
     pub guests: Vec<GuestWithRsvp>,
+    pub welcome_dinner_invite: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -132,6 +135,7 @@ impl<S: RsvpStore, G: NameSimilaritySearcher> HandlerImpl<S, G> {
             party_id: party.id.clone(),
             display_name: party.display_name.clone(),
             guests,
+            welcome_dinner_invite: party.welcome_dinner_invite,
         })
     }
 
@@ -156,6 +160,22 @@ impl<S: RsvpStore, G: NameSimilaritySearcher> HandlerImpl<S, G> {
                 return Err(HandlerError::BadRequest(format!(
                     "Maximum length of dietary restrictions is 100 characters."
                 )));
+            }
+
+            if party.welcome_dinner_invite && response.attending_welcome_dinner.is_none() {
+                return Err(HandlerError::BadRequest(format!(
+                    "{} was given a welcome party invite but {} did not submit a response.",
+                    party.display_name,
+                    response.name,
+                )));
+            }
+
+            if !party.welcome_dinner_invite && response.attending_welcome_dinner.is_some() {
+                return Err(HandlerError::BadRequest(format!(
+                    "{} was not invited to the welcome party but {} submitted an RSVP.",
+                    party.display_name,
+                    response.name,
+                )))
             }
         }
 
@@ -228,6 +248,7 @@ mod tests {
                         aliases: vec![],
                     },
                 ],
+                welcome_dinner_invite: false,
             },
         );
 
@@ -240,6 +261,7 @@ mod tests {
                     name: "Alice Doe".to_string(),
                     aliases: vec![],
                 }],
+                welcome_dinner_invite: true,
             },
         );
 
@@ -262,6 +284,7 @@ mod tests {
                         aliases: vec![],
                     },
                 ],
+                welcome_dinner_invite: false,
             },
         );
 
@@ -389,6 +412,7 @@ mod tests {
                     name: "Not A Real Guest".to_string(),
                     attending: true,
                     dietary_restrictions: None,
+                    attending_welcome_dinner: None,
                 }],
             })
             .await
@@ -422,11 +446,13 @@ mod tests {
                     name: "John Smith".to_string(),
                     attending: true,
                     dietary_restrictions: Some("vegetarian".to_string()),
+                    attending_welcome_dinner: None
                 },
                 GuestRsvp {
                     name: "Jane Smith".to_string(),
                     attending: false,
                     dietary_restrictions: None,
+                    attending_welcome_dinner: None
                 },
             ],
         })
@@ -467,6 +493,7 @@ mod tests {
                 name: "Alice Doe".to_string(),
                 attending: false,
                 dietary_restrictions: None,
+                attending_welcome_dinner: Some(false),
             }],
         })
         .await
@@ -478,6 +505,7 @@ mod tests {
                 name: "Alice Doe".to_string(),
                 attending: true,
                 dietary_restrictions: Some("gluten-free".to_string()),
+                attending_welcome_dinner: Some(true),
             }],
         })
         .await
@@ -509,6 +537,7 @@ mod tests {
                 name: "Carol Williams".to_string(),
                 attending: true,
                 dietary_restrictions: None,
+                attending_welcome_dinner: None
             }],
         })
         .await
@@ -533,6 +562,72 @@ mod tests {
         assert_eq!(without_rsvp, 2);
     }
 
+    // ── Welcome party tests ───────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_welcome_party_invite_requires_response() {
+        // p002 has welcome_dinner_invite: true; omitting attending_welcome_dinner must be rejected
+        let err = handler()
+            .submit_rsvp(PutRsvpInput {
+                party_id: "p002".to_string(),
+                responses: vec![GuestRsvp {
+                    name: "Alice Doe".to_string(),
+                    attending: true,
+                    dietary_restrictions: None,
+                    attending_welcome_dinner: None,
+                }],
+            })
+            .await
+            .unwrap_err();
+        assert!(matches!(err, HandlerError::BadRequest(_)), "got {err:?}");
+    }
+
+    #[tokio::test]
+    async fn test_non_welcome_party_guest_cannot_submit_welcome_response() {
+        // p001 has welcome_dinner_invite: false; supplying attending_welcome_dinner must be rejected
+        let err = handler()
+            .submit_rsvp(PutRsvpInput {
+                party_id: "p001".to_string(),
+                responses: vec![GuestRsvp {
+                    name: "John Smith".to_string(),
+                    attending: true,
+                    dietary_restrictions: None,
+                    attending_welcome_dinner: Some(true),
+                }],
+            })
+            .await
+            .unwrap_err();
+        assert!(matches!(err, HandlerError::BadRequest(_)), "got {err:?}");
+    }
+
+    #[tokio::test]
+    async fn test_welcome_party_response_recorded_correctly() {
+        // p002 has welcome_dinner_invite: true; attending_welcome_dinner must round-trip through the store
+        let h = handler();
+
+        h.submit_rsvp(PutRsvpInput {
+            party_id: "p002".to_string(),
+            responses: vec![GuestRsvp {
+                name: "Alice Doe".to_string(),
+                attending: true,
+                dietary_restrictions: None,
+                attending_welcome_dinner: Some(true),
+            }],
+        })
+        .await
+        .unwrap();
+
+        let result = h.get_party("p002").await.unwrap();
+        let alice = result
+            .guests
+            .iter()
+            .find(|g| g.name == "Alice Doe")
+            .unwrap();
+        let rsvp = alice.rsvp.as_ref().expect("Alice should have an RSVP");
+        assert!(rsvp.attending);
+        assert_eq!(rsvp.attending_welcome_dinner, Some(true));
+    }
+
     #[tokio::test]
     async fn test_store_is_shared_across_clone() {
         // HandlerImpl::clone shares the same underlying store (Arc)
@@ -545,6 +640,7 @@ mod tests {
                 name: "John Smith".to_string(),
                 attending: true,
                 dietary_restrictions: None,
+                attending_welcome_dinner: None
             }],
         })
         .await

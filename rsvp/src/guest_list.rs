@@ -19,6 +19,7 @@ pub struct PartyEntry {
     pub id: String,
     pub display_name: String,
     pub guests: Vec<GuestEntry>,
+    pub welcome_dinner_invite: bool,
 }
 
 pub trait GuestListFactory<G: GuestList> {
@@ -71,7 +72,11 @@ enum ParseCsvError {
     InvalidCsvError(String),
 }
 
-fn parse_guest_csv(guest_csv_str: String) -> Result<HashMap<String, PartyEntry>, ParseCsvError> {
+// Parses a guest list of the format party_display_name,guest_name,guest_alias
+fn parse_guest_csv(
+    guest_csv_str: String,
+    welcome_party_list: &Vec<String>,
+) -> Result<HashMap<String, PartyEntry>, ParseCsvError> {
     let mut map: HashMap<String, PartyEntry> = HashMap::new();
     for line in guest_csv_str.lines() {
         let line = line.trim();
@@ -84,14 +89,22 @@ fn parse_guest_csv(guest_csv_str: String) -> Result<HashMap<String, PartyEntry>,
             return Err(InvalidCsvError(line.to_string()));
         };
 
+        let display = display.trim();
+        let name = name.trim();
+        let alias = alias.trim();
+
         let id = xxh3_64(display.as_bytes()).to_string();
 
         let display = display.trim().to_string();
         let name = name.trim().to_string();
-        let entry = map.entry(id.clone()).or_insert_with(|| PartyEntry {
-            id,
-            display_name: display,
-            guests: Vec::new(),
+        let entry = map.entry(id.clone()).or_insert_with(|| {
+            let welcome_dinner = welcome_party_list.contains(&display);
+            PartyEntry {
+                id,
+                display_name: display,
+                guests: Vec::new(),
+                welcome_dinner_invite: welcome_dinner,
+            }
         });
 
         let aliases = if alias.trim().is_empty() {
@@ -112,23 +125,54 @@ pub struct S3GuestListFactory {
     map: HashMap<String, PartyEntry>,
 }
 
+async fn read_object_to_str(
+    s3_client: &aws_sdk_s3::Client,
+    bucket_name: &String,
+    object_key: &String,
+    expected_bucket_owner: &String,
+) -> anyhow::Result<String> {
+    let key = s3_client
+        .get_object()
+        .bucket(bucket_name)
+        .key(object_key)
+        .expected_bucket_owner(expected_bucket_owner)
+        .send()
+        .await?;
+    let bytes = key.body.collect().await?.into_bytes();
+    let result = String::from_utf8(bytes.to_vec())?;
+
+    Ok(result)
+}
+
 impl S3GuestListFactory {
     pub async fn new(
         s3_client: aws_sdk_s3::Client,
         bucket_name: String,
-        object_key: String,
         expected_bucket_owner: String,
+        guest_list_key: String,
+        welcome_dinner_key: String,
     ) -> anyhow::Result<S3GuestListFactory> {
-        let key = s3_client
-            .get_object()
-            .bucket(bucket_name)
-            .key(object_key)
-            .expected_bucket_owner(expected_bucket_owner)
-            .send()
-            .await?;
-        let bytes = key.body.collect().await?.into_bytes();
-        let content = String::from_utf8(bytes.to_vec())?;
-        let map = parse_guest_csv(content)?;
+        let guest_list = read_object_to_str(
+            &s3_client,
+            &bucket_name,
+            &guest_list_key,
+            &expected_bucket_owner,
+        )
+        .await?;
+
+        let welcome_dinner = read_object_to_str(
+            &s3_client,
+            &bucket_name,
+            &welcome_dinner_key,
+            &expected_bucket_owner,
+        )
+        .await?
+        .split('\n')
+        .map(String::from)
+        .collect();
+
+        let map = parse_guest_csv(guest_list, &welcome_dinner)?;
+
         Ok(S3GuestListFactory { map })
     }
 }
