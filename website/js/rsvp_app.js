@@ -1,15 +1,22 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * @typedef {{ attending: boolean, dietaryRestrictions: string | null }} GuestRsvp
+ * @typedef {{ attending: boolean, dietaryRestrictions: string | null, attendingWelcomeDinner: boolean | null }} GuestRsvp
  * @typedef {{ name: string, rsvp: GuestRsvp | null }} Guest
- * @typedef {{ partyId: string, displayName: string, guests: Guest[] }} Party
+ * @typedef {{ partyId: string, displayName: string, guests: Guest[], welcomeDinnerInvite: boolean }} Party
  * @typedef {{ partyId: string, displayName: string, guestNames: string[] }} SearchMatch
- * @typedef {{ name: string, attending: boolean, dietaryRestrictions: string | null }} RsvpResponse
+ * @typedef {{ name: string, attending: boolean, dietaryRestrictions: string | null, attendingWelcomeDinner: boolean | null }} RsvpResponse
  *
  * @typedef {{ party: Party, editable: boolean }} PartyFormData
  * @typedef {{ partyId: string, responses: RsvpResponse[] }} ConfirmedData
  * @typedef {PartyFormData | ConfirmedData | null} StateData
+ *
+ * @typedef {{
+ *   gate: boolean | null,
+ *   selections: { [guestName: string]: boolean | null },
+ *   onGateToggle: (isYes: boolean) => void,
+ *   onToggle: (guestName: string, isYes: boolean) => void,
+ * }} WelcomeConfig
  */
 
 // ─── API Layer ────────────────────────────────────────────────────────────────
@@ -53,12 +60,14 @@ class RsvpApi {
     return {
       partyId: data.party_id,
       displayName: data.display_name,
+      welcomeDinnerInvite: data.welcome_dinner_invite === true,
       guests: data.guests.map((g) => ({
         name: g.name,
         rsvp: g.rsvp
           ? {
               attending: g.rsvp.attending,
               dietaryRestrictions: g.rsvp.dietary_restrictions,
+              attendingWelcomeDinner: g.rsvp.attending_welcome_dinner ?? null,
             }
           : null,
       })),
@@ -81,6 +90,9 @@ class RsvpApi {
           name: r.name,
           attending: r.attending,
           dietary_restrictions: r.dietaryRestrictions || null,
+          ...(r.attendingWelcomeDinner === null
+            ? {}
+            : { attending_welcome_dinner: r.attendingWelcomeDinner }),
         })),
       }),
     });
@@ -223,7 +235,9 @@ class RsvpView {
     this._removeEditBtn();
 
     for (const guest of party.guests) {
-      this.guestList.appendChild(this._buildReadOnlyCard(guest));
+      this.guestList.appendChild(
+        this._buildReadOnlyCard(guest, party.welcomeDinnerInvite),
+      );
     }
 
     const editBtn = document.createElement("button");
@@ -242,6 +256,7 @@ class RsvpView {
    * @param {(guestName: string, isYes: boolean) => void} onToggle  Called on each toggle.
    * @param {{ [guestName: string]: string }} dietaryRestrictions  Current dietary restriction values.
    * @param {(guestName: string, text: string) => void} onDietaryChange  Called on dietary input change.
+   * @param {WelcomeConfig | null} welcome  Welcome-party gate/selection config, or null if the party isn't invited.
    */
   renderPartyEditable(
     party,
@@ -249,6 +264,7 @@ class RsvpView {
     onToggle,
     dietaryRestrictions,
     onDietaryChange,
+    welcome,
   ) {
     this._showOnly(this.partyView);
     this.partyName.innerHTML = `<h3>${party.displayName}</h3><p class="rsvp-form-title">RSVP</p>`;
@@ -268,6 +284,10 @@ class RsvpView {
           onDietaryChange,
         ),
       );
+    }
+
+    if (welcome) {
+      this.guestList.appendChild(this._buildWelcomeSection(party, welcome));
     }
   }
 
@@ -303,12 +323,26 @@ class RsvpView {
           r.attending && r.dietaryRestrictions
             ? `<span class="rsvp-dietary">${r.dietaryRestrictions}</span>`
             : "";
+        let welcomeHtml = "";
+        if (r.attendingWelcomeDinner != null) {
+          const wCls = r.attendingWelcomeDinner
+            ? "rsvp-badge--yes"
+            : "rsvp-badge--no";
+          const wLabel = r.attendingWelcomeDinner
+            ? "Attending"
+            : "Not Attending";
+          welcomeHtml = `
+            <div class="rsvp-summary welcome-summary">
+              <span class="welcome-label">Welcome party:</span>
+              <span class="rsvp-badge ${wCls}">${wLabel}</span>
+            </div>`;
+        }
         return `
           <div class="guest-card guest-card--readonly">
             <p class="guest-name">${r.name}</p>
             <div class="rsvp-summary">
               <span class="rsvp-badge ${cls}">${label}</span>${dietaryHtml}
-            </div>
+            </div>${welcomeHtml}
           </div>`;
       })
       .join("");
@@ -330,9 +364,10 @@ class RsvpView {
 
   /**
    * @param {Guest} guest
+   * @param {boolean} [welcomeInvite]  Whether the party was invited to the welcome party.
    * @returns {HTMLElement}
    */
-  _buildReadOnlyCard(guest) {
+  _buildReadOnlyCard(guest, welcomeInvite = false) {
     const card = document.createElement("div");
     card.className = "guest-card guest-card--readonly";
     const attending = guest.rsvp?.attending;
@@ -348,9 +383,21 @@ class RsvpView {
       statusHtml = `<span class="rsvp-badge rsvp-badge--none">No response</span>`;
     }
 
+    let welcomeHtml = "";
+    const welcome = guest.rsvp?.attendingWelcomeDinner;
+    if (welcomeInvite && guest.rsvp && welcome != null) {
+      const cls = welcome ? "rsvp-badge--yes" : "rsvp-badge--no";
+      const label = welcome ? "Attending" : "Not Attending";
+      welcomeHtml = `
+      <div class="rsvp-summary welcome-summary">
+        <span class="welcome-label">Welcome party:</span>
+        <span class="rsvp-badge ${cls}">${label}</span>
+      </div>`;
+    }
+
     card.innerHTML = `
       <p class="guest-name">${guest.name}</p>
-      <div class="rsvp-summary">${statusHtml}</div>`;
+      <div class="rsvp-summary">${statusHtml}</div>${welcomeHtml}`;
     return card;
   }
 
@@ -402,6 +449,91 @@ class RsvpView {
 
     return card;
   }
+
+  /**
+   * Build the welcome-party section: a party-level yes/no gate that reveals a
+   * per-guest attendance toggle when "Yes" is selected.
+   * @param {Party} party
+   * @param {WelcomeConfig} welcome
+   * @returns {HTMLElement}
+   */
+  _buildWelcomeSection(party, welcome) {
+    const section = document.createElement("div");
+    section.className = "guest-card welcome-section";
+
+    const gateYes = welcome.gate === true ? " attend-yes" : "";
+    const gateNo = welcome.gate === false ? " attend-no" : "";
+
+    section.innerHTML = `
+      <p class="guest-name">Welcome Party</p>
+      <p class="welcome-question">Would your party like to attend the welcome party?</p>
+      <div class="attend-toggle welcome-gate">
+        <button type="button" class="attend-btn${gateYes}" data-welcome="true">Yes</button>
+        <button type="button" class="attend-btn${gateNo}" data-welcome="false">No</button>
+      </div>
+      <div class="welcome-guest-list"></div>`;
+
+    const detail = section.querySelector(".welcome-guest-list");
+    for (const guest of party.guests) {
+      detail.appendChild(
+        this._buildWelcomeGuestRow(
+          guest,
+          welcome.selections[guest.name],
+          welcome.onToggle,
+        ),
+      );
+    }
+    detail.style.display = welcome.gate === true ? "" : "none";
+
+    section.querySelectorAll(".welcome-gate .attend-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        section
+          .querySelectorAll(".welcome-gate .attend-btn")
+          .forEach((b) => b.classList.remove("attend-yes", "attend-no"));
+        const isYes = btn.dataset.welcome === "true";
+        btn.classList.add(isYes ? "attend-yes" : "attend-no");
+        detail.style.display = isYes ? "" : "none";
+        welcome.onGateToggle(isYes);
+      });
+    });
+
+    return section;
+  }
+
+  /**
+   * Build a single per-guest welcome-party attendance toggle row.
+   * @param {Guest} guest
+   * @param {boolean | null} selected
+   * @param {(guestName: string, isYes: boolean) => void} onToggle
+   * @returns {HTMLElement}
+   */
+  _buildWelcomeGuestRow(guest, selected, onToggle) {
+    const row = document.createElement("div");
+    row.className = "welcome-guest-row";
+
+    const yesClass = selected === true ? " attend-yes" : "";
+    const noClass = selected === false ? " attend-no" : "";
+
+    row.innerHTML = `
+      <p class="welcome-guest-name">${guest.name}</p>
+      <div class="attend-toggle">
+        <button type="button" class="attend-btn${yesClass}" data-attending="true">Attending</button>
+        <button type="button" class="attend-btn${noClass}" data-attending="false">Not Attending</button>
+      </div>`;
+
+    row.querySelectorAll(".attend-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        row
+          .querySelectorAll(".attend-btn")
+          .forEach((b) => b.classList.remove("attend-yes", "attend-no"));
+        const isYes = btn.dataset.attending === "true";
+        btn.classList.add(isYes ? "attend-yes" : "attend-no");
+        onToggle(guest.name, isYes);
+      });
+    });
+
+    return row;
+  }
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -425,6 +557,10 @@ class RsvpController {
     this._selections = {};
     /** @type {{ [guestName: string]: string }} */
     this._dietaryRestrictions = {};
+    /** @type {boolean | null} Party-level "will your party attend the welcome party?" gate. */
+    this._welcomeGate = null;
+    /** @type {{ [guestName: string]: boolean | null }} Per-guest welcome-party attendance. */
+    this._welcomeSelections = {};
   }
 
   /** Attach DOM event listeners and render the initial search state. */
@@ -525,12 +661,36 @@ class RsvpController {
   }
 
   /**
+   * Record the party-level welcome-party gate selection.
+   * @param {boolean} isYes
+   */
+  onWelcomeGateToggle(isYes) {
+    this._welcomeGate = isYes;
+  }
+
+  /**
+   * Record a per-guest welcome-party attendance toggle.
+   * @param {string} guestName
+   * @param {boolean} isYes
+   */
+  onWelcomeToggle(guestName, isYes) {
+    this._welcomeSelections[guestName] = isYes;
+  }
+
+  /**
    * Validate selections, then submit the RSVP and transition to the confirmation state.
    * Re-enables the submit button and shows an error message if the request fails.
    */
   async onFormSubmit() {
     const { party } = /** @type {PartyFormData} */ (this.model.data);
     const responses = [];
+
+    if (party.welcomeDinnerInvite && this._welcomeGate === null) {
+      this.view.setStatusMessage(
+        `Please let us know whether your party will attend the welcome party.`,
+      );
+      return;
+    }
 
     for (const guest of party.guests) {
       const attending = this._selections[guest.name];
@@ -550,10 +710,28 @@ class RsvpController {
         return;
       }
 
+      // Welcome-party attendance: null for non-invited parties; false when the
+      // party declined the gate; the per-guest selection when they opted in.
+      let attendingWelcomeDinner = null;
+      if (party.welcomeDinnerInvite) {
+        if (this._welcomeGate === false) {
+          attendingWelcomeDinner = false;
+        } else {
+          attendingWelcomeDinner = this._welcomeSelections[guest.name];
+          if (attendingWelcomeDinner === null || attendingWelcomeDinner === undefined) {
+            this.view.setStatusMessage(
+              `Please select whether ${guest.name} will attend the welcome party.`,
+            );
+            return;
+          }
+        }
+      }
+
       responses.push({
         name: guest.name,
         attending,
         dietaryRestrictions,
+        attendingWelcomeDinner,
       });
     }
 
@@ -628,10 +806,31 @@ class RsvpController {
   _initSelections(party) {
     this._selections = {};
     this._dietaryRestrictions = {};
+    this._welcomeSelections = {};
     for (const guest of party.guests) {
       this._selections[guest.name] = guest.rsvp?.attending ?? null;
       this._dietaryRestrictions[guest.name] =
         guest.rsvp?.dietaryRestrictions ?? "";
+      this._welcomeSelections[guest.name] =
+        guest.rsvp?.attendingWelcomeDinner ?? null;
+    }
+
+    // Derive the party-level gate from existing per-guest welcome responses:
+    // "Yes" if anyone is attending, "No" if everyone has explicitly declined,
+    // otherwise unanswered.
+    if (party.welcomeDinnerInvite) {
+      const values = party.guests.map(
+        (g) => g.rsvp?.attendingWelcomeDinner ?? null,
+      );
+      if (values.some((v) => v === true)) {
+        this._welcomeGate = true;
+      } else if (values.length > 0 && values.every((v) => v === false)) {
+        this._welcomeGate = false;
+      } else {
+        this._welcomeGate = null;
+      }
+    } else {
+      this._welcomeGate = null;
     }
   }
 
@@ -651,12 +850,21 @@ class RsvpController {
           history.pushState({ view: State.PARTY_FORM, partyId: party.partyId }, "");
         }
         if (editable) {
+          const welcome = party.welcomeDinnerInvite
+            ? {
+                gate: this._welcomeGate,
+                selections: this._welcomeSelections,
+                onGateToggle: (isYes) => this.onWelcomeGateToggle(isYes),
+                onToggle: (name, isYes) => this.onWelcomeToggle(name, isYes),
+              }
+            : null;
           this.view.renderPartyEditable(
             party,
             this._selections,
             (name, isYes) => this.onAttendToggle(name, isYes),
             this._dietaryRestrictions,
             (name, text) => this.onDietaryChange(name, text),
+            welcome,
           );
         } else {
           this.view.renderPartyReadOnly(party, () => this.onEditClick(party));

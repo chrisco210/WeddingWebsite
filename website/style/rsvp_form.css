@@ -221,6 +221,52 @@ body.rsvp-form-body {
   border-color: #444;
 }
 
+/* ── Welcome party ───────────────────────────────────────────────────────── */
+
+.welcome-section {
+  border-color: #000;
+}
+
+.welcome-question {
+  margin: 0 0 0.6em 0;
+  font-family: "Ppeiko Light", serif;
+  font-size: 1rem;
+}
+
+.welcome-guest-list {
+  margin-top: 0.9em;
+}
+
+.welcome-guest-row {
+  margin-top: 0.75em;
+  padding-top: 0.75em;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.welcome-guest-row:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.welcome-guest-name {
+  margin: 0 0 0.5em 0;
+  font-family: "Ppeiko Light", serif;
+  font-variant: small-caps;
+  font-size: 1rem;
+}
+
+.welcome-summary {
+  margin-top: 0.5em;
+}
+
+.welcome-label {
+  font-family: "Ppeiko Light", serif;
+  font-variant: small-caps;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
 /* ── Dietary restrictions ────────────────────────────────────────────────── */
 
 .dietary-row {
