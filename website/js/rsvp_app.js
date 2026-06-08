@@ -466,7 +466,7 @@ class RsvpView {
 
     section.innerHTML = `
       <p class="guest-name">Welcome Party</p>
-      <p class="welcome-question">Would your party like to attend the welcome party?</p>
+      <p class="welcome-question">Would your party like to attend the welcome party on Friday, August 14th at 6:00 PM?</p>
       <div class="attend-toggle welcome-gate">
         <button type="button" class="attend-btn${gateYes}" data-welcome="true">Yes</button>
         <button type="button" class="attend-btn${gateNo}" data-welcome="false">No</button>
@@ -718,7 +718,10 @@ class RsvpController {
           attendingWelcomeDinner = false;
         } else {
           attendingWelcomeDinner = this._welcomeSelections[guest.name];
-          if (attendingWelcomeDinner === null || attendingWelcomeDinner === undefined) {
+          if (
+            attendingWelcomeDinner === null ||
+            attendingWelcomeDinner === undefined
+          ) {
             this.view.setStatusMessage(
               `Please select whether ${guest.name} will attend the welcome party.`,
             );
@@ -847,7 +850,10 @@ class RsvpController {
         const { party, editable } = /** @type {PartyFormData} */ (data);
         const hs = history.state;
         if (hs?.view !== State.PARTY_FORM || hs?.partyId !== party.partyId) {
-          history.pushState({ view: State.PARTY_FORM, partyId: party.partyId }, "");
+          history.pushState(
+            { view: State.PARTY_FORM, partyId: party.partyId },
+            "",
+          );
         }
         if (editable) {
           const welcome = party.welcomeDinnerInvite
