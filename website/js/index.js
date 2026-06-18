@@ -15,12 +15,14 @@ function initGalleryLazyLoad() {
         if (entry.isIntersecting) {
           const img = entry.target;
           img.src = img.dataset.src;
-          img.addEventListener("load", () => img.classList.add("loaded"), { once: true });
+          img.addEventListener("load", () => img.classList.add("loaded"), {
+            once: true,
+          });
           observer.unobserve(img);
         }
       });
     },
-    { rootMargin: "200px" }
+    { rootMargin: "200px" },
   );
 
   imgs.forEach((img) => observer.observe(img));
@@ -65,9 +67,9 @@ function updateCountdown() {
   const diff = weddingDate - now;
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
   if (days > 1) {
-    countdownEl.textContent = `${days} days to go!`;
+    countdownEl.textContent = `${days} Days to Go!`;
   } else if (days === 1) {
-    countdownEl.textContent = "1 day to go!";
+    countdownEl.textContent = "1 Day to Go!";
   } else if (days === 0) {
     countdownEl.textContent = "Today is the day!";
   } else {
