@@ -319,10 +319,9 @@ class RsvpView {
       .map((r) => {
         const cls = r.attending ? "rsvp-badge--yes" : "rsvp-badge--no";
         const label = r.attending ? "Attending" : "Not Attending";
-        const dietaryHtml =
-          r.attending && r.dietaryRestrictions
-            ? `<span class="rsvp-dietary">${r.dietaryRestrictions}</span>`
-            : "";
+        const dietaryHtml = r.attending
+          ? this._dietaryHtml(r.dietaryRestrictions)
+          : "";
         let welcomeHtml = "";
         if (r.attendingWelcomeDinner != null) {
           const wCls = r.attendingWelcomeDinner
@@ -363,6 +362,20 @@ class RsvpView {
   }
 
   /**
+   * Render a guest's dietary restrictions as a span, or "" if none.
+   * Dietary text is customer-provided, so it is escaped (via the browser's
+   * own HTML serializer) before being interpolated into innerHTML.
+   * @param {string | null | undefined} dietary
+   * @returns {string}
+   */
+  _dietaryHtml(dietary) {
+    if (!dietary) return "";
+    const el = document.createElement("div");
+    el.textContent = dietary;
+    return `<span class="rsvp-dietary">${el.innerHTML}</span>`;
+  }
+
+  /**
    * @param {Guest} guest
    * @param {boolean} [welcomeInvite]  Whether the party was invited to the welcome party.
    * @returns {HTMLElement}
@@ -376,7 +389,7 @@ class RsvpView {
     let statusHtml;
     if (attending === true) {
       statusHtml = `<span class="rsvp-badge rsvp-badge--yes">Attending</span>`;
-      if (dietary) statusHtml += `<span class="rsvp-dietary">${dietary}</span>`;
+      statusHtml += this._dietaryHtml(dietary);
     } else if (attending === false) {
       statusHtml = `<span class="rsvp-badge rsvp-badge--no">Not Attending</span>`;
     } else {
