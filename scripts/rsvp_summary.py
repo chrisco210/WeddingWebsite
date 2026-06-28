@@ -6,6 +6,16 @@ Usage:
     python3 scripts/rsvp_summary.py [--table TABLE_NAME] [--region REGION] [--format text|csv]
 
 AWS credentials are picked up from the environment / ~/.aws/credentials as usual.
+
+The guest list is read from rsvp/tf/guests.csv. Each line has the format
+    party_display_name,guest_name,guest_alias
+(the alias column may be empty). Parties are grouped by display name, and each
+party's id is the xxh3_64 hash of its (trimmed) display name — this must match
+the id the Rust backend (rsvp/src/guest_list.rs) uses as the DynamoDB key.
+
+Welcome-dinner invites are read from rsvp/tf/welcome_party.txt (one display name
+per line). RSVP responses (rsvp/src/handler.rs::GuestRsvp) carry an optional
+`attending_welcome_dinner` flag for invited parties.
 """
 
 import argparse
@@ -20,9 +30,19 @@ from typing import List, Optional
 
 import boto3
 
-GUESTS_CSV = (
-    Path(__file__).parent.parent / "server" / "rsvp" / "src" / "guests.csv"
-)
+try:
+    import xxhash
+except ImportError:
+    print(
+        "ERROR: the 'xxhash' package is required (party ids are xxh3_64 hashes).\n"
+        "       Install it with:  python3 -m pip install xxhash",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+TF_DIR = Path(__file__).parent.parent / "rsvp" / "tf"
+GUESTS_CSV = TF_DIR / "guests.csv"
+WELCOME_PARTY_TXT = TF_DIR / "welcome_party.txt"
 
 
 # ── Data model ────────────────────────────────────────────────────────────────
@@ -34,6 +54,9 @@ class GuestRow:
     guest_name: str
     status: str          # "attending", "declined", "no_response"
     dietary_restrictions: str
+    welcome_dinner_invite: bool
+    # "attending", "declined", "no_response", or "n/a" (party not invited)
+    welcome_dinner_status: str
 
 
 @dataclass
@@ -44,13 +67,30 @@ class Summary:
     total_no_response: int
     parties_responded: int
     total_parties: int
+    welcome_invited: int
+    welcome_attending: int
+    welcome_declined: int
+    welcome_no_response: int
     guests: List[GuestRow] = field(default_factory=list)
 
 
 # ── Load the authoritative guest list from CSV ────────────────────────────────
 
-def load_guest_list(path: Path) -> dict:
-    """Return {party_id: {id, display_name, guests: [str]}}."""
+def party_id_for(display_name: str) -> str:
+    """Match the Rust backend: xxh3_64 of the trimmed display name, as a decimal string."""
+    return str(xxhash.xxh3_64_intdigest(display_name.encode("utf-8")))
+
+
+def load_welcome_party(path: Path) -> set:
+    """Return the set of party display names invited to the welcome dinner."""
+    if not path.exists():
+        return set()
+    with open(path, encoding="utf-8") as fh:
+        return {line.strip() for line in fh if line.strip()}
+
+
+def load_guest_list(path: Path, welcome_names: set) -> dict:
+    """Return {party_id: {id, display_name, guests: [str], welcome_dinner_invite}}."""
     parties = {}
     with open(path, newline="", encoding="utf-8") as fh:
         for line in fh:
@@ -58,18 +98,21 @@ def load_guest_list(path: Path) -> dict:
             if not line or line.startswith("#"):
                 continue
             row = next(csv.reader(io.StringIO(line)))
-            if len(row) < 3:
+            # Format: display_name, guest_name, [alias]
+            if len(row) < 2:
                 continue
-            party_id = row[0].strip()
-            display_name = row[1].strip()
-            guest_name = row[2].strip()
-            if party_id not in parties:
-                parties[party_id] = {
-                    "id": party_id,
-                    "display_name": display_name,
-                    "guests": [],
-                }
-            parties[party_id]["guests"].append(guest_name)
+            display_name = row[0].strip()
+            guest_name = row[1].strip()
+            if not display_name or not guest_name:
+                continue
+            party_id = party_id_for(display_name)
+            party = parties.setdefault(party_id, {
+                "id": party_id,
+                "display_name": display_name,
+                "guests": [],
+                "welcome_dinner_invite": display_name in welcome_names,
+            })
+            party["guests"].append(guest_name)
     return parties
 
 
@@ -111,19 +154,25 @@ def build_summary(parties: dict, rsvp_items: list) -> Summary:
         rsvp = rsvp_by_party.get(party_id)
         if rsvp is not None:
             parties_responded += 1
+        invited_to_welcome = party["welcome_dinner_invite"]
 
         for guest_name in party["guests"]:
-            if rsvp is None:
+            response = rsvp.get(guest_name) if rsvp is not None else None
+            if response is None:
                 status = "no_response"
                 dietary = ""
+                welcome_status = "n/a" if not invited_to_welcome else "no_response"
             else:
-                response = rsvp.get(guest_name)
-                if response is None:
-                    status = "no_response"
-                    dietary = ""
+                status = "attending" if response.get("attending") else "declined"
+                dietary = (response.get("dietary_restrictions") or "").strip()
+                if not invited_to_welcome:
+                    welcome_status = "n/a"
                 else:
-                    status = "attending" if response.get("attending") else "declined"
-                    dietary = (response.get("dietary_restrictions") or "").strip()
+                    attending_welcome = response.get("attending_welcome_dinner")
+                    if attending_welcome is None:
+                        welcome_status = "no_response"
+                    else:
+                        welcome_status = "attending" if attending_welcome else "declined"
 
             guests.append(GuestRow(
                 party_id=party_id,
@@ -131,12 +180,20 @@ def build_summary(parties: dict, rsvp_items: list) -> Summary:
                 guest_name=guest_name,
                 status=status,
                 dietary_restrictions=dietary,
+                welcome_dinner_invite=invited_to_welcome,
+                welcome_dinner_status=welcome_status,
             ))
 
     total_invited = len(guests)
     total_attending = sum(1 for g in guests if g.status == "attending")
     total_declined = sum(1 for g in guests if g.status == "declined")
     total_no_response = sum(1 for g in guests if g.status == "no_response")
+
+    welcome_guests = [g for g in guests if g.welcome_dinner_invite]
+    welcome_invited = len(welcome_guests)
+    welcome_attending = sum(1 for g in welcome_guests if g.welcome_dinner_status == "attending")
+    welcome_declined = sum(1 for g in welcome_guests if g.welcome_dinner_status == "declined")
+    welcome_no_response = sum(1 for g in welcome_guests if g.welcome_dinner_status == "no_response")
 
     return Summary(
         total_invited=total_invited,
@@ -145,6 +202,10 @@ def build_summary(parties: dict, rsvp_items: list) -> Summary:
         total_no_response=total_no_response,
         parties_responded=parties_responded,
         total_parties=len(parties),
+        welcome_invited=welcome_invited,
+        welcome_attending=welcome_attending,
+        welcome_declined=welcome_declined,
+        welcome_no_response=welcome_no_response,
         guests=guests,
     )
 
@@ -155,6 +216,7 @@ def output_text(summary: Summary) -> None:
     attending = [g for g in summary.guests if g.status == "attending"]
     declined = [g for g in summary.guests if g.status == "declined"]
     no_response = [g for g in summary.guests if g.status == "no_response"]
+    welcome_attending = [g for g in summary.guests if g.welcome_dinner_status == "attending"]
     dietary = [(g.guest_name, g.dietary_restrictions) for g in summary.guests if g.dietary_restrictions]
 
     print("=" * 60)
@@ -165,6 +227,11 @@ def output_text(summary: Summary) -> None:
     print(f"  Attending:              {summary.total_attending}")
     print(f"  Declined:               {summary.total_declined}")
     print(f"  No response yet:        {summary.total_no_response}")
+    print()
+    print(f"  Welcome dinner invited: {summary.welcome_invited}")
+    print(f"  Welcome attending:      {summary.welcome_attending}")
+    print(f"  Welcome declined:       {summary.welcome_declined}")
+    print(f"  Welcome no response:    {summary.welcome_no_response}")
     print()
 
     print("-" * 60)
@@ -201,6 +268,17 @@ def output_text(summary: Summary) -> None:
         print(f"    ? {g.guest_name}")
     print()
 
+    print("-" * 60)
+    print("  WELCOME DINNER — ATTENDING")
+    print("-" * 60)
+    current_party = None
+    for g in welcome_attending:
+        if g.party_display_name != current_party:
+            print(f"  {g.party_display_name}")
+            current_party = g.party_display_name
+        print(f"    + {g.guest_name}")
+    print()
+
     if dietary:
         print("-" * 60)
         print("  DIETARY RESTRICTIONS")
@@ -214,9 +292,15 @@ def output_text(summary: Summary) -> None:
 
 def output_csv(summary: Summary) -> None:
     writer = csv.writer(sys.stdout)
-    writer.writerow(["party_id", "party_display_name", "guest_name", "status", "dietary_restrictions"])
+    writer.writerow([
+        "party_id", "party_display_name", "guest_name", "status",
+        "dietary_restrictions", "welcome_dinner_invite", "welcome_dinner_status",
+    ])
     for g in summary.guests:
-        writer.writerow([g.party_id, g.party_display_name, g.guest_name, g.status, g.dietary_restrictions])
+        writer.writerow([
+            g.party_id, g.party_display_name, g.guest_name, g.status,
+            g.dietary_restrictions, g.welcome_dinner_invite, g.welcome_dinner_status,
+        ])
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
@@ -245,7 +329,11 @@ def main() -> None:
         print(f"ERROR: guests.csv not found at {GUESTS_CSV}", file=sys.stderr)
         sys.exit(1)
 
-    parties = load_guest_list(GUESTS_CSV)
+    welcome_names = load_welcome_party(WELCOME_PARTY_TXT)
+    if not WELCOME_PARTY_TXT.exists():
+        print(f"WARNING: welcome_party.txt not found at {WELCOME_PARTY_TXT}", file=sys.stderr)
+
+    parties = load_guest_list(GUESTS_CSV, welcome_names)
     print(f"Loaded {len(parties)} parties from guests.csv", file=sys.stderr)
 
     print(f"Scanning DynamoDB table '{args.table}'...", file=sys.stderr)
